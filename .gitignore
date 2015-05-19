@@ -1,0 +1,9 @@
+// IDE
+.idea
+
+// VM
+Vagrantfile
+.vagrant
+
+// Bower
+bower_components
