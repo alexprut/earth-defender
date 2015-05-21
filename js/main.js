@@ -30,13 +30,23 @@ SpaceShip.prototype.create = function () {
     return new THREE.Mesh(geometry, material);
 };
 
+var Bullet = function () {
+};
+Bullet.prototype.constructor = Bullet;
+Bullet.prototype.create = function () {
+    var material = new THREE.MeshBasicMaterial({color: 0xff0000});
+    var geometry = new THREE.BoxGeometry(5, 2, 2);
+
+    return new THREE.Mesh(geometry, material);
+};
+
 
 var Meteorite = function () {
 };
 Meteorite.prototype.constructor = Meteorite;
 Meteorite.prototype.create = function () {
-    var geometry = new THREE.SphereGeometry(5, 10, 10);
-    var material = new THREE.MeshBasicMaterial({color: 0x0000ff});
+    var geometry = new THREE.SphereGeometry(5, 5, 5);
+    var material = new THREE.MeshBasicMaterial({color: 0xD2B48C});
 
     return new THREE.Mesh(geometry, material);
 };
@@ -47,14 +57,23 @@ var Game = function () {
     this.moon = null;
     this.scene = null;
     this.camera = null;
+    this.light = null;
     this.renderer = null;
     this.spaceShip = null;
+    this.bullets = new THREE.Object3D;
     this.meteorites = null;
     this.controls = null;
     this.gui = null;
     this.stats = null;
 };
 Game.prototype.constructor = Game;
+Game.prototype.initLight = function () {
+    var light = new THREE.DirectionalLight(0xFFFFAA, 0.5);
+    light.position.set(100, 0, 0);
+    light.target = new THREE.Vector3(0 ,0, 0);
+
+    return light;
+};
 Game.prototype.initCamera = function () {
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.z = 500;
@@ -101,7 +120,6 @@ Game.prototype.initMeteorites = function (numMeteorites) {
         meteorite.position.z = Math.random() * 1000 - Math.random() * 1000;
 
         meteorites.add(meteorite);
-
     }
 
     return meteorites;
@@ -127,9 +145,21 @@ Game.prototype.initGui = function () {
         this.earth.material.wireframe = guiParams.wireframe;
         this.spaceShip.material.wireframe = guiParams.wireframe;
         this.moon.children[0].material.wireframe = guiParams.wireframe;
+        this.meteorites.children.forEach((function (meteorite) {
+            meteorite.material.wireframe = guiParams.wireframe
+        }).bind(this));
     }).bind(this));
 
     return gui;
+};
+Game.prototype.shut = function () {
+    var bullet = new Bullet().create();
+
+
+    bullet.position.x = 100;
+
+    this.bullets.add(bullet);
+
 };
 Game.prototype.init = function () {
     this.renderer = this.initRender();
@@ -140,14 +170,26 @@ Game.prototype.init = function () {
     this.earth = this.initEarth();
     this.moon = this.initMoon();
     this.spaceShip = this.initSpaceShip();
-    this.meteorites = this.initMeteorites(5);
+    this.meteorites = this.initMeteorites(200);
+    this.light = this.initLight();
 
+    this.scene.add(this.light);
     this.scene.add(this.moon);
     this.scene.add(this.earth);
+    this.scene.add(this.bullets);
     this.scene.add(this.spaceShip);
     this.scene.add(this.meteorites);
 
     this.initGui();
+
+    window.onkeypress = (function (e) {
+        var key = e.keyCode ? e.keyCode : e.which;
+
+        // Spacebar
+        if (key == 32) {
+            this.shut();
+        }
+    }).bind(this);
 
     document.body.appendChild(this.renderer.domElement);
     this.render();
@@ -163,12 +205,19 @@ Game.prototype.render = function () {
     this.earth.rotation.y += 0.001;
     this.moon.rotation.y += 0.0005;
 
-    this.meteorites.children.forEach((function (currentValue, index) {
-        var moveFactor = 1;
-        var meteorite = currentValue;
+    this.bullets.children.forEach((function (bullet) {
+        bullet.position.x -= 1;
+    }).bind(this));
+
+    this.meteorites.children.forEach((function (meteorite, index) {
+        var moveFactor = 0.01;
         var x = meteorite.position.x;
         var y = meteorite.position.y;
         var z = meteorite.position.z;
+
+        if (-40 < x && x < 40 && -40 < y && y < 40 && -40 < z && z < 40) {
+            this.meteorites.children.splice(index, 1);
+        }
 
         if (x < 0) {
             meteorite.position.x += moveFactor;
