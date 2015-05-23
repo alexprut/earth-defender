@@ -27,11 +27,15 @@ Earth.prototype.create = function (uniforms, vertexShader, fragmentShader) {
 var Moon = function () {
 };
 Moon.prototype.constructor = Moon;
-Moon.prototype.create = function () {
-    var texture = new THREE.ImageUtils.loadTexture('img/moon.jpg');
-    texture.minFilter = THREE.NearestMipMapNearestFilter;
+Moon.prototype.create = function (uniforms, vertexShader, fragmentShader) {
+    uniforms.texture.value = new THREE.ImageUtils.loadTexture('img/moon.jpg');
+
     var geometry = new THREE.SphereGeometry(20, 15, 15);
-    var material = new THREE.MeshBasicMaterial({map: texture});
+    var material = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader
+    });
 
     return new THREE.Mesh(geometry, material);
 };
@@ -41,8 +45,11 @@ var Sun = function () {
 };
 Sun.prototype.constructor = Sun;
 Sun.prototype.create = function () {
-    var material = new THREE.MeshBasicMaterial({color: 0xffff00});
+    var texture = new THREE.ImageUtils.loadTexture('img/sun.jpg');
+
     var geometry = new THREE.SphereGeometry(20, 15, 15);
+    var material = new THREE.MeshBasicMaterial({map: texture});
+
 
     return new THREE.Mesh(geometry, material);
 };
@@ -51,9 +58,15 @@ Sun.prototype.create = function () {
 var SpaceShip = function () {
 };
 SpaceShip.prototype.constructor = SpaceShip;
-SpaceShip.prototype.create = function () {
-    var material = new THREE.MeshBasicMaterial({color: 0x0000ff});
+SpaceShip.prototype.create = function (uniforms, vertexShader, fragmentShader) {
+    uniforms.texture.value = new THREE.ImageUtils.loadTexture('img/spaceship.jpg');
+
     var geometry = new THREE.CylinderGeometry(1, 5, 20, 4);
+    var material = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader
+    });
 
     return new THREE.Mesh(geometry, material);
 };
@@ -72,10 +85,15 @@ Bullet.prototype.create = function () {
 var Meteorite = function () {
 };
 Meteorite.prototype.constructor = Meteorite;
-Meteorite.prototype.create = function () {
-    var texture = new THREE.ImageUtils.loadTexture('img/meteorite.jpg');
+Meteorite.prototype.create = function (uniforms, vertexShader, fragmentShader) {
+    uniforms.texture.value = new THREE.ImageUtils.loadTexture('img/meteorite.bmp');
+
     var geometry = new THREE.SphereGeometry(5, 5, 5);
-    var material = new THREE.MeshBasicMaterial({color: 0xD2B48C, map: texture});
+    var material = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader
+    });
 
     return new THREE.Mesh(geometry, material);
 };
@@ -106,9 +124,10 @@ Game.prototype.createUniforms = function () {
     var uniforms = {
         rho:	{ type: "v3", value: new THREE.Vector3() },
         lightPower:	{ type: "f", value: 0.0 },
-        texture : { type: "t", value: new THREE.ImageUtils.loadTexture('img/earth.jpg')}
+        texture : { type: "t", value: THREE.ImageUtils.loadTexture('img/meteorite.jpg')}
     };
 
+    uniforms.texture.value.minFilter = THREE.NearestMipMapNearestFilter;
     uniforms.rho.value = this.light.rho;
     uniforms.lightPower.value = this.light.lightPower;
 
@@ -152,7 +171,11 @@ Game.prototype.initRender = function () {
 };
 Game.prototype.initSpaceShip = function () {
     var spaceShip = new SpaceShip();
-    spaceShip = spaceShip.create();
+    spaceShip = spaceShip.create(
+        this.createUniforms(),
+        this.createVertexShader(),
+        this.createFragmentShader()
+    );
     spaceShip.position.x = 100;
     spaceShip.rotation.z = 90 * Math.PI / 180;
 
@@ -160,7 +183,11 @@ Game.prototype.initSpaceShip = function () {
 };
 Game.prototype.initMoon = function () {
     var tmpMoon = new Moon();
-    tmpMoon = tmpMoon.create();
+    tmpMoon = tmpMoon.create(
+        this.createUniforms(),
+        this.createVertexShader(),
+        this.createFragmentShader()
+    );
     tmpMoon.position.x = 200;
 
     var moon = new THREE.Object3D();
@@ -171,7 +198,11 @@ Game.prototype.initMoon = function () {
 Game.prototype.initMeteorites = function (numMeteorites) {
     var meteorites = new THREE.Object3D();
     for (var i = 0; i < numMeteorites; i++) {
-        var meteorite = new Meteorite().create();
+        var meteorite = new Meteorite().create(
+            this.createUniforms(),
+            this.createVertexShader(),
+            this.createFragmentShader()
+        );
         meteorite.position.x = Math.random() * 1000 - Math.random() * 1000;
         meteorite.position.y = Math.random() * 1000 - Math.random() * 1000;
         meteorite.position.z = Math.random() * 1000 - Math.random() * 1000;
