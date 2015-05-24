@@ -122,6 +122,14 @@ var Game = function () {
 Game.prototype.constructor = Game;
 Game.prototype.createUniforms = function () {
     var uniforms = {
+        lightPosition: {
+            type: 'v3',
+            value: this.light.lightPosition
+        },
+        ambient: {
+            type: 'v3',
+            value: this.light.ambientValue
+        },
         rho: {
             type: "v3",
             value: this.light.rho
