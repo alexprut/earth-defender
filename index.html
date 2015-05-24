@@ -1,6 +1,7 @@
 <html>
 <head>
     <title>Earth Defender</title>
+    <link rel="shortcut icon" href="img/favicon.png">
     <link rel="stylesheet" type="text/css" href="css/style.css">
     <script src="bower_components/threejs/build/three.js"></script>
     <script src="bower_components/stats.js/build/stats.min.js"></script>
@@ -9,23 +10,23 @@
 </head>
 <body>
     <script type="text/x-glsl" id="vertex">
-        varying vec2 vUv;
-        varying vec3 outRadiance;
+        uniform vec3 ambient;
+        uniform vec3 lightPosition;
         uniform float lightPower;
         uniform vec3 rho;
+        varying vec3 outRadiance;
+        varying vec2 vUv;
         uniform sampler2D texture;
 
         const float PI = 3.14159;
 
         void main() {
             vUv = uv;
-            vec3 pointLightPosition = vec3(400.0, 0.0, 0.0);
-            vec3 ambient = vec3(0.09, 0.09, 0.1);
 			// transforms the vertex from object space to clip space coords
 			gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
 			vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 			vec3 transformedNormal = normalMatrix * normal;
-			vec4 lPosition = viewMatrix * vec4( pointLightPosition, 1.0 );
+			vec4 lPosition = viewMatrix * vec4( lightPosition, 1.0 );
 			vec3 lVector = lPosition.xyz - mvPosition.xyz;
 			float beta = lightPower / ( 4.0  * PI * length(lVector) );
 			lVector = normalize( lVector );
@@ -34,7 +35,6 @@
 			outRadiance = beta * pointLightWeighting * rho / PI + ambient;
 		}
 	</script>
-
     <script type="text/x-glsl" id="fragment">
         varying vec2 vUv;
         uniform sampler2D texture;
@@ -45,6 +45,11 @@
 		    //gl_FragColor = vec4(outRadiance, 1.0);
         }
 		</script>
-    <script src="js/main.js"></script>￼
+    <script src="js/main.js"></script>
+    <div id="panel">
+        <div id="logo">
+            Earth-Defender
+        </div>
+    </div>
 </body>
 </html>

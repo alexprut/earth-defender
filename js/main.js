@@ -7,95 +7,95 @@ var Light = function (lightPosition, lightPower, ambientValue, rho) {
 Light.prototype.constructor = Light;
 
 
-var Earth = function () {
+var Element = function (texture) {
+    this.texture = texture;
 };
-Earth.prototype.constructor = Earth;
-Earth.prototype.create = function (uniforms, vertexShader, fragmentShader) {
-    uniforms.texture.value = new THREE.ImageUtils.loadTexture('img/earth.jpg');
-    var geometry = new THREE.SphereGeometry(40, 20, 20);
+Element.prototype.createShaderMaterial = function (uniforms, vertexShader, fragmentShader) {
+    uniforms.texture.value = new THREE.ImageUtils.loadTexture(this.texture);
 
-    var material = new THREE.ShaderMaterial({
+    return new THREE.ShaderMaterial({
         uniforms: uniforms,
         vertexShader: vertexShader,
-        fragmentShader: fragmentShader
+        fragmentShader: fragmentShader,
+        wireframe: true
     });
+};
 
-    return new THREE.Mesh(geometry, material);
+var Earth = function () {
+    Element.call(this, 'img/earth.jpg');
+};
+Earth.prototype = Object.create(Element.prototype);
+Earth.prototype.constructor = Earth;
+Earth.prototype.create = function (uniforms, vertexShader, fragmentShader) {
+    return new THREE.Mesh(
+        new THREE.SphereGeometry(40, 20, 20),
+        this.createShaderMaterial(uniforms, vertexShader, fragmentShader)
+    );
 };
 
 
 var Moon = function () {
+    Element.call(this, 'img/moon.jpg');
 };
+Moon.prototype = Object.create(Element.prototype);
 Moon.prototype.constructor = Moon;
 Moon.prototype.create = function (uniforms, vertexShader, fragmentShader) {
-    uniforms.texture.value = new THREE.ImageUtils.loadTexture('img/moon.jpg');
-
-    var geometry = new THREE.SphereGeometry(20, 15, 15);
-    var material = new THREE.ShaderMaterial({
-        uniforms: uniforms,
-        vertexShader: vertexShader,
-        fragmentShader: fragmentShader
-    });
-
-    return new THREE.Mesh(geometry, material);
+    return new THREE.Mesh(
+        new THREE.SphereGeometry(20, 15, 15),
+        this.createShaderMaterial(uniforms, vertexShader, fragmentShader)
+    );
 };
 
 
 var Sun = function () {
+    Element.call(this, 'img/sun.jpg');
 };
+Sun.prototype = Object.create(Element.prototype);
 Sun.prototype.constructor = Sun;
 Sun.prototype.create = function () {
-    var texture = new THREE.ImageUtils.loadTexture('img/sun.jpg');
-
-    var geometry = new THREE.SphereGeometry(20, 15, 15);
-    var material = new THREE.MeshBasicMaterial({map: texture});
-
-
-    return new THREE.Mesh(geometry, material);
+    return new THREE.Mesh(
+        new THREE.SphereGeometry(20, 15, 15),
+        new THREE.MeshBasicMaterial({
+            map: THREE.ImageUtils.loadTexture(this.texture),
+            wireframe: true
+        })
+    );
 };
 
 
 var SpaceShip = function () {
+    Element.call(this, 'img/spaceship.jpg');
 };
+SpaceShip.prototype = Object.create(Element.prototype);
 SpaceShip.prototype.constructor = SpaceShip;
 SpaceShip.prototype.create = function (uniforms, vertexShader, fragmentShader) {
-    uniforms.texture.value = new THREE.ImageUtils.loadTexture('img/spaceship.jpg');
-
-    var geometry = new THREE.CylinderGeometry(1, 5, 20, 4);
-    var material = new THREE.ShaderMaterial({
-        uniforms: uniforms,
-        vertexShader: vertexShader,
-        fragmentShader: fragmentShader
-    });
-
-    return new THREE.Mesh(geometry, material);
+    return new THREE.Mesh(
+        new THREE.CylinderGeometry(1, 5, 20, 4),
+        this.createShaderMaterial(uniforms, vertexShader, fragmentShader)
+    );
 };
 
 var Bullet = function () {
 };
 Bullet.prototype.constructor = Bullet;
 Bullet.prototype.create = function () {
-    var material = new THREE.MeshBasicMaterial({color: 0xff0000});
-    var geometry = new THREE.BoxGeometry(5, 2, 2);
-
-    return new THREE.Mesh(geometry, material);
+    return new THREE.Mesh(
+        new THREE.BoxGeometry(5, 2, 2),
+        new THREE.MeshBasicMaterial({color: 0xff0000})
+    );
 };
 
 
 var Meteorite = function () {
+    Element.call(this, 'img/meteorite.bmp');
 };
+Meteorite.prototype = Object.create(Element.prototype);
 Meteorite.prototype.constructor = Meteorite;
 Meteorite.prototype.create = function (uniforms, vertexShader, fragmentShader) {
-    uniforms.texture.value = new THREE.ImageUtils.loadTexture('img/meteorite.bmp');
-
-    var geometry = new THREE.SphereGeometry(5, 5, 5);
-    var material = new THREE.ShaderMaterial({
-        uniforms: uniforms,
-        vertexShader: vertexShader,
-        fragmentShader: fragmentShader
-    });
-
-    return new THREE.Mesh(geometry, material);
+    return new THREE.Mesh(
+        new THREE.SphereGeometry(5, 5, 5),
+        this.createShaderMaterial(uniforms, vertexShader, fragmentShader)
+    );
 };
 
 
@@ -122,14 +122,29 @@ var Game = function () {
 Game.prototype.constructor = Game;
 Game.prototype.createUniforms = function () {
     var uniforms = {
-        rho:	{ type: "v3", value: new THREE.Vector3() },
-        lightPower:	{ type: "f", value: 0.0 },
-        texture : { type: "t", value: THREE.ImageUtils.loadTexture('img/meteorite.jpg')}
+        lightPosition: {
+            type: 'v3',
+            value: this.light.lightPosition
+        },
+        ambient: {
+            type: 'v3',
+            value: this.light.ambientValue
+        },
+        rho: {
+            type: "v3",
+            value: this.light.rho
+        },
+        lightPower: {
+            type: "f",
+            value: this.light.lightPower
+        },
+        texture: {
+            type: "t",
+            value: THREE.ImageUtils.loadTexture('img/earth.jpg')
+        }
     };
 
     uniforms.texture.value.minFilter = THREE.NearestMipMapNearestFilter;
-    uniforms.rho.value = this.light.rho;
-    uniforms.lightPower.value = this.light.lightPower;
 
     return uniforms;
 };
@@ -224,12 +239,13 @@ Game.prototype.initGui = function () {
     var gui = new dat.GUI();
 
     guiParams = {
-        wireframe: false
+        wireframe: true
     };
 
     var debugFolder = gui.addFolder('Debug');
 
     debugFolder.add(guiParams, 'wireframe').listen().onFinishChange((function () {
+        this.sun.material.wireframe = guiParams.wireframe;
         this.earth.material.wireframe = guiParams.wireframe;
         this.spaceShip.material.wireframe = guiParams.wireframe;
         this.moon.children[0].material.wireframe = guiParams.wireframe;
@@ -242,7 +258,6 @@ Game.prototype.initGui = function () {
 };
 Game.prototype.shut = function () {
     var bullet = new Bullet().create();
-
 
     bullet.position.x = 100;
 
