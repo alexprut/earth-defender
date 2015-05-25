@@ -30,11 +30,23 @@ canvas {
 	color: #fff;
 	font-family: "Courier New", Courier, monospace;
 	font-size: 27px;
-	line-height: 50px;
-	height: 50px;
+	line-height: 48px;
+	height: 48px;
+	float: left;
 	text-transform: uppercase;
 	font-style: italic;
-	z-index : 1000;
+}
+
+#panel #life {
+	float: left;
+	margin-left : 40px;
+	color: #fff;
+	font-family: "Courier New", Courier, monospace;
+	font-size: 15px;
+	line-height: 48px;
+	height: 48px;
+	text-transform: capitalize;
+	font-style: italic;
 }
 
 body .dg.ac {
