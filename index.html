@@ -9,6 +9,12 @@
     <script src="bower_components/threejs/examples/js/libs/dat.gui.min.js"></script>
 </head>
 <body>
+    <div id="panel">
+        <div id="logo">
+            Earth-Defender
+        </div>
+        <div id="life">Earth Life: <span id="points"></span></div>
+    </div>
     <script type="text/x-glsl" id="vertex">
         uniform vec3 ambient;
         uniform vec3 lightPosition;
@@ -46,10 +52,6 @@
         }
 		</script>
     <script src="js/main.js"></script>
-    <div id="panel">
-        <div id="logo">
-            Earth-Defender
-        </div>
-    </div>
+
 </body>
 </html>
