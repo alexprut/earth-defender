@@ -118,6 +118,8 @@ var Game = function () {
     this.controls = null;
     this.gui = null;
     this.stats = null;
+    this.counter = 0;
+    this.life = 1000;
 };
 Game.prototype.constructor = Game;
 Game.prototype.createUniforms = function () {
@@ -153,6 +155,12 @@ Game.prototype.createVertexShader = function () {
 };
 Game.prototype.createFragmentShader = function () {
     return document.getElementById("fragment").textContent;
+};
+Game.prototype.updateLife = function () {
+    if (this.life > 0) {
+        this.life -= 200;
+        document.getElementById('points').innerHTML = this.life;
+    }
 };
 Game.prototype.initCamera = function () {
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -294,6 +302,9 @@ Game.prototype.init = function () {
         }
     }).bind(this);
 
+    document.getElementById('points').innerHTML = this.life;
+
+
     document.body.appendChild(this.renderer.domElement);
     this.render();
 };
@@ -312,14 +323,26 @@ Game.prototype.render = function () {
         bullet.position.x -= 1;
     }).bind(this));
 
+    this.counter--;
+    if(this.counter === 0) {
+        this.earth.material.uniforms.ambient.value = this.light.ambientValue;
+    }
+
     this.meteorites.children.forEach((function (meteorite, index) {
-        var moveFactor = 0.1;
+        var moveFactor = 0.05;
         var x = meteorite.position.x;
         var y = meteorite.position.y;
         var z = meteorite.position.z;
 
-        if (-40 < x && x < 40 && -40 < y && y < 40 && -40 < z && z < 40) {
+        if (-60 < x && x < 60 && -60 < y && y < 60 && -60 < z && z < 60) {
+            this.meteorites.children[index].material.uniforms.ambient.value = new THREE.Vector3(0.9, 0.1, 0.1);
+        }
+
+        if (-38 < x && x < 38 && -38 < y && y < 38 && -38 < z && z < 38) {
             this.meteorites.children.splice(index, 1);
+            this.counter = 30;
+            this.earth.material.uniforms.ambient.value = new THREE.Vector3(0.9, 0.1, 0.1);
+            this.updateLife();
         }
 
         if (x < 0) {
