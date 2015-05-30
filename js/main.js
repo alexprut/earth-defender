@@ -163,7 +163,7 @@ Game.prototype.updateLife = function () {
     }
 };
 Game.prototype.initCamera = function () {
-    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
     camera.position.z = 500;
 
     return camera;
@@ -264,7 +264,14 @@ Game.prototype.initGui = function () {
 
     return gui;
 };
-Game.prototype.shut = function () {
+Game.prototype.initControls = function () {
+    var controls = new THREE.OrbitControls(this.camera);
+    controls.maxDistance = 1000;
+    controls.minDistance = 80;
+
+    return controls;
+};
+Game.prototype.shoot = function () {
     var bullet = new Bullet().create();
 
     bullet.position.x = 100;
@@ -277,7 +284,7 @@ Game.prototype.init = function () {
     this.scene = new THREE.Scene();
     this.camera = this.initCamera();
     this.stats = this.initStats();
-    this.controls = new THREE.OrbitControls(this.camera);
+    this.controls = this.initControls();
     this.sun = this.initSun();
     this.earth = this.initEarth();
     this.moon = this.initMoon();
@@ -298,12 +305,11 @@ Game.prototype.init = function () {
 
         // Spacebar
         if (key == 32) {
-            this.shut();
+            this.shoot();
         }
     }).bind(this);
 
-    document.getElementById('points').innerHTML = this.life;
-
+    document.getElementById('points').innerHTML = this.life
 
     document.body.appendChild(this.renderer.domElement);
     this.render();
@@ -324,7 +330,7 @@ Game.prototype.render = function () {
     }).bind(this));
 
     this.counter--;
-    if(this.counter === 0) {
+    if (this.counter === 0) {
         this.earth.material.uniforms.ambient.value = this.light.ambientValue;
     }
 
