@@ -279,6 +279,50 @@ Game.prototype.shoot = function () {
     this.bullets.add(bullet);
 
 };
+Game.prototype.initEventShoot = function () {
+    document.onkeypress = (function (e) {
+        var key = e.keyCode ? e.keyCode : e.which;
+
+        // Spacebar
+        if (key == 32) {
+            this.shoot();
+        }
+    }).bind(this);
+};
+Game.prototype.initEventSelectPlanet = function () {
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+
+    var onDocumentMouseDown = function (event) {
+        event.preventDefault();
+
+        this.mouse.x = (event.clientX / this.renderer.domElement.width) * 2 - 1;
+        this.mouse.y = -(event.clientY / this.renderer.domElement.height) * 2 + 1;
+
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+
+        var intersects = this.raycaster.intersectObjects(
+            [this.earth, this.moon.children[0], this.spaceShip, this.sun]
+        );
+
+        if (intersects.length) {
+            this.camera.lookAt(intersects[0].object.position);
+            this.controls.target = intersects[0].object.position;
+        }
+    };
+
+    var onDocumentTouchStart = function (event) {
+        event.preventDefault();
+
+        event.clientX = event.touches[0].clientX;
+        event.clientY = event.touches[0].clientY;
+        onDocumentMouseDown(event).bind(this);
+
+    };
+
+    document.addEventListener('mousedown', onDocumentMouseDown.bind(this), false);
+    document.addEventListener('touchstart', onDocumentTouchStart.bind(this), false);
+};
 Game.prototype.init = function () {
     this.renderer = this.initRender();
     this.scene = new THREE.Scene();
@@ -300,17 +344,10 @@ Game.prototype.init = function () {
 
     this.initGui();
 
-    window.onkeypress = (function (e) {
-        var key = e.keyCode ? e.keyCode : e.which;
+    this.initEventShoot();
+    this.initEventSelectPlanet();
 
-        // Spacebar
-        if (key == 32) {
-            this.shoot();
-        }
-    }).bind(this);
-
-    document.getElementById('points').innerHTML = this.life
-
+    document.getElementById('points').innerHTML = this.life;
     document.body.appendChild(this.renderer.domElement);
     this.render();
 };
