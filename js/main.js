@@ -163,7 +163,7 @@ Game.prototype.updateLife = function () {
     }
 };
 Game.prototype.initCamera = function () {
-    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
     camera.position.z = 500;
 
     return camera;
@@ -264,7 +264,14 @@ Game.prototype.initGui = function () {
 
     return gui;
 };
-Game.prototype.shut = function () {
+Game.prototype.initControls = function () {
+    var controls = new THREE.OrbitControls(this.camera);
+    controls.maxDistance = 1000;
+    controls.minDistance = 80;
+
+    return controls;
+};
+Game.prototype.shoot = function () {
     var bullet = new Bullet().create();
 
     bullet.position.x = 100;
@@ -272,12 +279,56 @@ Game.prototype.shut = function () {
     this.bullets.add(bullet);
 
 };
+Game.prototype.initEventShoot = function () {
+    document.onkeypress = (function (e) {
+        var key = e.keyCode ? e.keyCode : e.which;
+
+        // Spacebar
+        if (key == 32) {
+            this.shoot();
+        }
+    }).bind(this);
+};
+Game.prototype.initEventSelectPlanet = function () {
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+
+    var onDocumentMouseDown = function (event) {
+        event.preventDefault();
+
+        this.mouse.x = (event.clientX / this.renderer.domElement.width) * 2 - 1;
+        this.mouse.y = -(event.clientY / this.renderer.domElement.height) * 2 + 1;
+
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+
+        var intersects = this.raycaster.intersectObjects(
+            [this.earth, this.moon.children[0], this.spaceShip, this.sun]
+        );
+
+        if (intersects.length) {
+            this.camera.lookAt(intersects[0].object.position);
+            this.controls.target = intersects[0].object.position;
+        }
+    };
+
+    var onDocumentTouchStart = function (event) {
+        event.preventDefault();
+
+        event.clientX = event.touches[0].clientX;
+        event.clientY = event.touches[0].clientY;
+        onDocumentMouseDown(event).bind(this);
+
+    };
+
+    document.addEventListener('mousedown', onDocumentMouseDown.bind(this), false);
+    document.addEventListener('touchstart', onDocumentTouchStart.bind(this), false);
+};
 Game.prototype.init = function () {
     this.renderer = this.initRender();
     this.scene = new THREE.Scene();
     this.camera = this.initCamera();
     this.stats = this.initStats();
-    this.controls = new THREE.OrbitControls(this.camera);
+    this.controls = this.initControls();
     this.sun = this.initSun();
     this.earth = this.initEarth();
     this.moon = this.initMoon();
@@ -293,18 +344,10 @@ Game.prototype.init = function () {
 
     this.initGui();
 
-    window.onkeypress = (function (e) {
-        var key = e.keyCode ? e.keyCode : e.which;
-
-        // Spacebar
-        if (key == 32) {
-            this.shut();
-        }
-    }).bind(this);
+    this.initEventShoot();
+    this.initEventSelectPlanet();
 
     document.getElementById('points').innerHTML = this.life;
-
-
     document.body.appendChild(this.renderer.domElement);
     this.render();
 };
@@ -324,7 +367,7 @@ Game.prototype.render = function () {
     }).bind(this));
 
     this.counter--;
-    if(this.counter === 0) {
+    if (this.counter === 0) {
         this.earth.material.uniforms.ambient.value = this.light.ambientValue;
     }
 
