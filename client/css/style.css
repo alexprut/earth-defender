@@ -22,7 +22,7 @@ canvas {
 	position : fixed;
 	top: 0;
 	left: 0;
-	background-color: rgb(17, 17, 51);
+	background-color: #111133;
 }
 
 #panel #logo {
@@ -47,6 +47,36 @@ canvas {
 	height: 48px;
 	text-transform: capitalize;
 	font-style: italic;
+}
+
+#gamePlay {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 400px;
+	height: 100px;
+	margin-left: -200px;
+	margin-top: -50px;
+	background-color: #1c1433;
+	color: #fff;
+	padding: 0;
+}
+
+#gamePlay a {
+	display : inline-block;
+	width: 200px;
+	padding: 0;
+	margin: 0;
+	font-size: 20px;
+	line-height: 100px;
+	text-align: center;
+	text-decoration: none;
+	color: #fff;
+	font-family: monospace;
+}
+
+#gamePlay a:hover {
+	background: #6e7be6;
 }
 
 body .dg.ac {
