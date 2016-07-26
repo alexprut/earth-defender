@@ -449,6 +449,10 @@ Game.prototype.render = function () {
             this.earth.material.uniforms.ambient.value = new THREE.Vector3(0.9, 0.1, 0.1);
             this.updateLife();
         }
+        
+        /*if (this.meteorites.children[index].position.x == this.bullets.position.x) {
+            this.meteorites.children.splice(index, 1);
+        }*/
 
         if (x < 0) {
             meteorite.position.x += moveFactor;
