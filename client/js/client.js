@@ -12,3 +12,4 @@ connection.onerror = function (error) {
 connection.onmessage = function (message) {
     console.log(message);
 };
+
