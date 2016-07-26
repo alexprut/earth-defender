@@ -128,6 +128,7 @@ var Game = function () {
     this.counter = 0;
     this.life = 1000;
     this.requestAnimationFrameId = null;
+    this.players = 0;
 };
 Game.prototype.constructor = Game;
 Game.prototype.createUniforms = function () {
@@ -176,6 +177,10 @@ Game.prototype.initCamera = function () {
 
     return camera;
 };
+Game.prototype.updatePlayers = function () {
+    this.players += 1;
+    document.getElementById('n_player').innerHTML = this.players;
+};
 Game.prototype.initSun = function () {
     var sun = new Sun();
     sun = sun.create();
@@ -207,7 +212,7 @@ Game.prototype.initSpaceShip = function () {
         this.createVertexShader(),
         this.createFragmentShader()
     );
-    spaceShip.position.x = 100;
+    spaceShip.position.x = Math.random() * 500 + 100;
     spaceShip.rotation.z = 90 * Math.PI / 180;
 
     return spaceShip;
@@ -282,10 +287,36 @@ Game.prototype.initControls = function () {
 Game.prototype.shoot = function () {
     var bullet = new Bullet().create();
 
-    bullet.position.x = 100;
+    bullet.position.x = this.spaceShip.position.x - 10;
+    bullet.position.y = this.spaceShip.position.y;
+    bullet.position.z = this.spaceShip.position.z;
 
     this.bullets.add(bullet);
 
+};
+Game.prototype.initEventMoveSpace = function () {
+    document.onkeydown = (function (e) {
+        var key = e.keyCode ? e.keyCode : e.which;
+
+        if (key == 104) { //^
+            this.spaceShip.position.y +=2;
+        }
+        if (key == 98) { //v
+            this.spaceShip.position.y -=2;
+        }
+        if (key == 102) { //>
+            this.spaceShip.position.x +=2;
+        }
+        if (key == 100) { //<
+            this.spaceShip.position.x -=2;
+        }
+        if (key == 97) { //<
+            this.spaceShip.position.z +=5;
+        }
+        if (key == 99) { //<
+            this.spaceShip.position.z -=5;
+        }
+    }).bind(this);
 };
 Game.prototype.initEventShoot = function () {
     document.onkeypress = (function (e) {
@@ -318,6 +349,7 @@ Game.prototype.init = function (config) {
 
     this.initGui();
 
+    this.initEventMoveSpace();
     this.initEventShoot();
 
     document.getElementById('points').innerHTML = this.life;
@@ -342,6 +374,10 @@ Game.prototype.stop = function () {
 Game.prototype.render = function () {
     this.requestAnimationFrameId = requestAnimationFrame(this.render.bind(this));
 
+    this.camera.position.x = this.spaceShip.position.x+15;
+    this.camera.position.y = this.spaceShip.position.y;
+    this.camera.position.z = this.spaceShip.position.z;
+
     this.stats.begin();
     this.renderer.render(this.scene, this.camera);
     this.stats.end();
@@ -365,6 +401,7 @@ Game.prototype.render = function () {
         var y = meteorite.position.y;
         var z = meteorite.position.z;
 
+        // Planets become Red near the earth
         if (-60 < x && x < 60 && -60 < y && y < 60 && -60 < z && z < 60) {
             this.meteorites.children[index].material.uniforms.ambient.value = new THREE.Vector3(0.9, 0.1, 0.1);
         }
