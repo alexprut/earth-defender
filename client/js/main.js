@@ -5,3 +5,5 @@ document.body.onload = function () {
     game = new Game();
     game.init();
 };
+
+
