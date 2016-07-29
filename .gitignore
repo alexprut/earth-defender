@@ -12,3 +12,13 @@ bower_components
 // Npm
 */node_modules/*
 npm-debug.log
+
+/*Erlang dependencies*/
+server/relx
+server/ebin/
+server/_rel/
+server/deps/
+server/.erlang.mk/
+server/erlang.mk
+server/earth_defender.d
+

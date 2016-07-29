@@ -1,15 +1,27 @@
-var connection = new WebSocket('ws://127.0.0.1:8888');
+var websocket;
+      function init() {
+              connect();
+      };
 
-connection.onopen = function () {
-    connection.send("Ping");
-    console.log("asdasd");
-};
+      function connect()
+      {
+          websocket = new WebSocket('ws://127.0.0.1:8888/websocket');
+      };
+      
+      function disconnect() {
+          websocket.close();
+      }; 
 
-connection.onerror = function (error) {
-    console.log(error);
-};
+      function toggle_connection(){
+          if(websocket.readyState == websocket.OPEN){
+              disconnect();
+          } else {
+              connect();
+          };
+      };
 
-connection.onmessage = function (message) {
-    console.log(message);
-};
-
+      function sendTxt() {
+          if(websocket.readyState == websocket.OPEN){
+              websocket.send(txt);
+          }
+      };
