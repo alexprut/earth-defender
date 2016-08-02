@@ -1,4 +1,4 @@
-PROJECT = earth_defender
+PROJECT = websocket
 PROJECT_DESCRIPTION = Cowboy Websocket earth_def
 PROJECT_VERSION = 1
 
