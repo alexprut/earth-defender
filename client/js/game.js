@@ -159,7 +159,7 @@ var DOMHandler = function (gameHandler) {
         setScore(0);
     }
 
-    function showMessage(msg) {
+    function setMessage(msg) {
         document.getElementById('message').className = '';
         document.getElementById('message').innerHTML = msg;
     }
