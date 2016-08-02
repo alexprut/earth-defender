@@ -37,7 +37,7 @@ function sendTxt(txt) {
 
 function onOpen(evt) {
     console.log('onOpen');
-    game.updateNofPlayers();
+    game.updatePlayers();
 };
 
 function onClose(evt) {
@@ -46,7 +46,7 @@ function onClose(evt) {
 
 function onMessage(evt) {
     player_socket = evt.data;
-    game.updateNofPlayers();
+    game.updatePlayers();
 };
 
 function onError(evt) {
