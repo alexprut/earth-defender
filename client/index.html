@@ -15,12 +15,16 @@
         <div id="logo">
             Earth-Defender
         </div>
-        <div id="life">Earth Life: <span id="points"></span></div>
-        <div id="players">Number of Players: <span id="n_player"></span></div>
+        <div class="elements">
+            <div>Earth Life: <span id="life">--</span></div>
+            <div>Score: <span id="score">--</span></div>
+            <div>Players: <span id="players">--</span></div>
+        </div>
     </div>
 
-    <div id="gamePlay">
-        <button>Single Player</button><button>Mutiplayer</button>
+    <div id="message" class="hidden"></div>
+    <div id="gameType">
+        <button id="gameType-singlePlayer">Single Player</button><button id="gameType-multiPlayer">Mutiplayer</button>
     </div>
 
     <script type="text/x-glsl" id="vertex">
