@@ -49,6 +49,18 @@ canvas {
 	font-style: italic;
 }
 
+#panel #players {
+	float: left;
+	margin-left : 40px;
+	color: #fff;
+	font-family: "Courier New", Courier, monospace;
+	font-size: 15px;
+	line-height: 48px;
+	height: 48px;
+	text-transform: capitalize;
+	font-style: italic;
+}
+
 #gamePlay {
 	position: absolute;
 	top: 50%;

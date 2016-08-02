@@ -171,15 +171,17 @@ Game.prototype.updateLife = function () {
         document.getElementById('points').innerHTML = this.life;
     }
 };
+
+Game.prototype.updateNofPlayers = function () {
+              sendTxt("n_players");
+              document.getElementById('n_player').innerHTML = this.players = player_socket;
+};
+
 Game.prototype.initCamera = function () {
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
     camera.position.z = 500;
 
     return camera;
-};
-Game.prototype.updatePlayers = function () {
-    this.players += 1;
-    document.getElementById('n_player').innerHTML = this.players;
 };
 Game.prototype.initSun = function () {
     var sun = new Sun();
@@ -353,6 +355,7 @@ Game.prototype.init = function (config) {
     this.initEventShoot();
 
     document.getElementById('points').innerHTML = this.life;
+    document.getElementById('n_player').innerHTML = this.players;
     document.body.appendChild(this.renderer.domElement);
     this.render();
 };
@@ -377,7 +380,6 @@ Game.prototype.render = function () {
     this.camera.position.x = this.spaceShip.position.x+15;
     this.camera.position.y = this.spaceShip.position.y;
     this.camera.position.z = this.spaceShip.position.z;
-
     this.stats.begin();
     this.renderer.render(this.scene, this.camera);
     this.stats.end();
