@@ -106,6 +106,10 @@ Meteorite.prototype.create = function (uniforms, vertexShader, fragmentShader) {
 /////////////////////////////////////////////////////
 // Game DOM Handler
 /////////////////////////////////////////////////////
+Element.prototype.remove = function () {
+    this.parentElement.removeChild(this);
+};
+
 var DOMHandler = function (gameHandler) {
 
     function setLife(life) {
@@ -136,10 +140,10 @@ var DOMHandler = function (gameHandler) {
             });
         }
 
-        var canvas = document.getElementsByTagName('canvas')[0];
-        if (canvas) {
-            document.body.removeChild(canvas);
+        while (document.getElementsByTagName('canvas').length) {
+            document.getElementsByTagName('canvas')[0].remove();
         }
+
         document.body.appendChild(gameHandler.renderer.domElement);
 
         clearMessage();
