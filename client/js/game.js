@@ -104,9 +104,83 @@ Meteorite.prototype.create = function (uniforms, vertexShader, fragmentShader) {
 
 
 /////////////////////////////////////////////////////
-// Game Renderer
+// Game DOM Handler
 /////////////////////////////////////////////////////
-var Game = function () {
+var DOMHandler = function (gameHandler) {
+
+    function setLife(life) {
+        document.getElementById('life').innerHTML = life;
+    }
+
+    function setPlayers(players) {
+        document.getElementById('players').innerHTML = players;
+    }
+
+    function setScore(score) {
+        document.getElementById('score').innerHTML = score;
+    }
+
+    function init() {
+        if (!gameHandler.isMultiplayer) {
+            document.getElementById('gameType').className = 'hidden';
+        } else {
+            document.getElementById('gameType-singlePlayer').addEventListener('click', function () {
+                console.log("Single Player game type selected");
+                document.getElementById('gameType').className = 'hidden';
+                gameHandler.stop("Loading ...");
+                gameHandler.start();
+            });
+
+            document.getElementById('gameType-multiPlayer').addEventListener('click', function () {
+                console.log("Multiplayer game type selected");
+            });
+        }
+
+        var canvas = document.getElementsByTagName('canvas')[0];
+        if (canvas) {
+            document.body.removeChild(canvas);
+        }
+        document.body.appendChild(gameHandler.renderer.domElement);
+
+        clearMessage();
+        resetLife();
+        resetScore();
+    }
+
+    function resetLife() {
+        setLife(gameHandler.maxLife);
+    }
+
+    function resetScore() {
+        setScore(0);
+    }
+
+    function showMessage(msg) {
+        document.getElementById('message').className = '';
+        document.getElementById('message').innerHTML = msg;
+    }
+
+    function clearMessage() {
+        document.getElementById('message').className = 'hidden';
+        document.getElementById('message').innerHTML = '';
+    }
+
+    return {
+        init: init,
+        setLife: setLife,
+        setPlayers: setPlayers,
+        setScore: setScore,
+        resetLife: resetLife,
+        resetScore: resetScore,
+        showMessage: showMessage,
+        clearMessage: clearMessage
+    }
+};
+
+/////////////////////////////////////////////////////
+// Game Renderer and Logic
+/////////////////////////////////////////////////////
+var Game = function (config) {
     this.light = new Light(
         new THREE.Vector3(400, 0, 0),
         10000,
@@ -122,13 +196,24 @@ var Game = function () {
     this.renderer = null;
     this.spaceShip = null;
     this.meteorites = null;
+    this.maxMeteorietes = config.maxMeteorietes || 200;
     this.controls = null;
     this.gui = null;
     this.stats = null;
     this.counter = 0;
-    this.life = 1000;
+    this.maxLife = config.maxLife || 1000;
+    this.life = this.maxLife;
+    this.score = 0;
     this.requestAnimationFrameId = null;
     this.players = 0;
+    this.maxPlayers = config.maxPlayers || 10;
+    this.debug = config.debug || false;
+    this.isMultiplayer = config.isMultiplayer || false;
+    this.DOMHandler = new DOMHandler(this);
+
+    if (this.debug) {
+        this.initGui();
+    }
 };
 Game.prototype.constructor = Game;
 Game.prototype.createUniforms = function () {
@@ -168,20 +253,21 @@ Game.prototype.createFragmentShader = function () {
 Game.prototype.updateLife = function () {
     if (this.life > 0) {
         this.life -= 200;
-        document.getElementById('points').innerHTML = this.life;
+        this.DOMHandler.setLife(this.life);
+    } else {
+        this.stop("Game Over");
     }
 };
-
-Game.prototype.updateNofPlayers = function () {
-              sendTxt("n_players");
-              document.getElementById('n_player').innerHTML = this.players = player_socket;
-};
-
 Game.prototype.initCamera = function () {
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
     camera.position.z = 500;
 
     return camera;
+};
+Game.prototype.updatePlayers = function () {
+    sendTxt("n_players");
+    this.players = player_socket;
+    this.DOMHandler.setPlayers(this.players);
 };
 Game.prototype.initSun = function () {
     var sun = new Sun();
@@ -296,27 +382,27 @@ Game.prototype.shoot = function () {
     this.bullets.add(bullet);
 
 };
-Game.prototype.initEventMoveSpace = function () {
+Game.prototype.initEventMoveSpaceShip = function () {
     document.onkeydown = (function (e) {
         var key = e.keyCode ? e.keyCode : e.which;
 
         if (key == 104) { //^
-            this.spaceShip.position.y +=2;
+            this.spaceShip.position.y += 2;
         }
         if (key == 98) { //v
-            this.spaceShip.position.y -=2;
+            this.spaceShip.position.y -= 2;
         }
         if (key == 102) { //>
-            this.spaceShip.position.x +=2;
+            this.spaceShip.position.x += 2;
         }
         if (key == 100) { //<
-            this.spaceShip.position.x -=2;
+            this.spaceShip.position.x -= 2;
         }
         if (key == 97) { //<
-            this.spaceShip.position.z +=5;
+            this.spaceShip.position.z += 5;
         }
         if (key == 99) { //<
-            this.spaceShip.position.z -=5;
+            this.spaceShip.position.z -= 5;
         }
     }).bind(this);
 };
@@ -330,7 +416,7 @@ Game.prototype.initEventShoot = function () {
         }
     }).bind(this);
 };
-Game.prototype.init = function (config) {
+Game.prototype.init = function () {
     this.renderer = this.initRender();
     this.scene = new THREE.Scene();
     this.camera = this.initCamera();
@@ -340,7 +426,7 @@ Game.prototype.init = function (config) {
     this.earth = this.initEarth();
     this.moon = this.initMoon();
     this.spaceShip = this.initSpaceShip();
-    this.meteorites = this.initMeteorites(200);
+    this.meteorites = this.initMeteorites(this.maxMeteorietes);
 
     this.scene.add(this.sun);
     this.scene.add(this.moon);
@@ -349,35 +435,32 @@ Game.prototype.init = function (config) {
     this.scene.add(this.spaceShip);
     this.scene.add(this.meteorites);
 
-    this.initGui();
-
-    this.initEventMoveSpace();
+    this.initEventMoveSpaceShip();
     this.initEventShoot();
 
-    document.getElementById('points').innerHTML = this.life;
-    document.getElementById('n_player').innerHTML = this.players;
-    document.body.appendChild(this.renderer.domElement);
+    this.DOMHandler.init();
     this.render();
 };
 Game.prototype.pause = function () {
     cancelAnimationFrame(this.requestAnimationFrameId);
 };
-Game.prototype.start = function (config) {
+Game.prototype.start = function () {
     console.log(this.requestAnimationFrameId);
     if (this.requestAnimationFrameId) {
         this.render();
     } else {
-        this.init(config);
+        this.init();
     }
 };
-Game.prototype.stop = function () {
+Game.prototype.stop = function (msg) {
     cancelAnimationFrame(this.requestAnimationFrameId);
     this.requestAnimationFrameId = null;
+    this.DOMHandler.showMessage(msg);
 };
 Game.prototype.render = function () {
     this.requestAnimationFrameId = requestAnimationFrame(this.render.bind(this));
 
-    this.camera.position.x = this.spaceShip.position.x+15;
+    this.camera.position.x = this.spaceShip.position.x + 15;
     this.camera.position.y = this.spaceShip.position.y;
     this.camera.position.z = this.spaceShip.position.z;
     this.stats.begin();
