@@ -269,8 +269,6 @@ Game.prototype.initCamera = function () {
     return camera;
 };
 Game.prototype.updatePlayers = function () {
-    sendTxt("n_players");
-    this.players = player_socket;
     this.DOMHandler.setPlayers(this.players);
 };
 Game.prototype.initSun = function () {
