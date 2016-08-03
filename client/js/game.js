@@ -176,7 +176,7 @@ var DOMHandler = function (gameHandler) {
         setScore: setScore,
         resetLife: resetLife,
         resetScore: resetScore,
-        showMessage: showMessage,
+        setMessage: setMessage,
         clearMessage: clearMessage
     }
 };
@@ -459,7 +459,7 @@ Game.prototype.start = function () {
 Game.prototype.stop = function (msg) {
     cancelAnimationFrame(this.requestAnimationFrameId);
     this.requestAnimationFrameId = null;
-    this.DOMHandler.showMessage(msg);
+    this.DOMHandler.setMessage(msg);
 };
 Game.prototype.render = function () {
     this.requestAnimationFrameId = requestAnimationFrame(this.render.bind(this));
