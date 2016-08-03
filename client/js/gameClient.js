@@ -1,5 +1,4 @@
 var websocket;
-var player_socket;
 init();
 
 function init() {
@@ -23,6 +22,9 @@ function connect() {
 };
 
 function disconnect() {
+    sendTxt("rem_player");
+    sendTxt("ret_player");
+    game.updatePlayers();
     websocket.close();
 };
 
@@ -37,18 +39,26 @@ function sendTxt(txt) {
 
 function onOpen(evt) {
     console.log('onOpen');
+    sendTxt("add_player");
+    sendTxt("ret_player");
     game.updatePlayers();
 };
 
 function onClose(evt) {
     console.log('onClose');
+    sendTxt("rem_player");
+    sendTxt("ret_player");
+    game.updatePlayers();
 };
 
 function onMessage(evt) {
-    player_socket = evt.data;
+    game.players = evt.data;
     game.updatePlayers();
 };
 
 function onError(evt) {
     console.log('onError' + evt.data);
+    sendTxt("rem_player");
+    sendTxt("ret_player");
+    game.updatePlayers();
 };

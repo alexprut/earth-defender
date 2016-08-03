@@ -7,9 +7,13 @@
 %% API.
 -export([start/2]).
 -export([stop/1]).
+-import(counter,[start/0,inc/0]).
+
 
 %% API.
 start(_Type, _Args) ->
+    counter:start(),
+    inc(),
 	Dispatch = cowboy_router:compile([
 		{'_', [
 			{"/", cowboy_static, {priv_file, websocket, "index.html"}},
