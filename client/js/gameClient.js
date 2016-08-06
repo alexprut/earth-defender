@@ -1,64 +1,51 @@
-var websocket;
-init();
-
-function init() {
-    connect();
+var GameClient = function (config) {
+    this.servers = config.servers;
+    this.game = config.game;
+    this.websocket = null;
 };
+GameClient.prototype.constructor = GameClient;
+GameClient.prototype.connect = function () {
+    this.websocket = new WebSocket('ws://' + this.servers);
 
-function connect() {
-    websocket = new WebSocket('ws://127.0.0.1:8888/websocket');
-    websocket.onopen = function (evt) {
-        onOpen(evt)
-    };
-    websocket.onclose = function (evt) {
-        onClose(evt)
-    };
-    websocket.onmessage = function (evt) {
-        onMessage(evt)
-    };
-    websocket.onerror = function (evt) {
-        onError(evt)
-    };
+    this.websocket.onopen = this.onOpen;
+    this.websocket.onclose = this.onClose;
+    this.websocket.onerror = this.onError;
+    this.websocket.onmessage = this.onMessage;
 };
+GameClient.prototype.disconnect = function () {
+    this.send("rem_player");
+    this.send("ret_player");
 
-function disconnect() {
-    sendTxt("rem_player");
-    sendTxt("ret_player");
-    game.updatePlayers();
     websocket.close();
 };
-
-function sendTxt(txt) {
-    if (websocket.readyState == websocket.OPEN) {
-        websocket.send(txt);
-        console.log('sending: ' + txt);
+GameClient.prototype.send = function (data) {
+    if (websocket.readyState === websocket.OPEN) {
+        websocket.send(data);
+        console.log('sending: ' + data);
     } else {
-        console.log('websocket is not connected');
+        console.log('WebSocket is not connected');
     }
 };
-
-function onOpen(evt) {
+GameClient.prototype.onOpen = function (event) {
     console.log('onOpen');
-    sendTxt("add_player");
-    sendTxt("ret_player");
-    game.updatePlayers();
-};
 
-function onClose(evt) {
+    this.send("add_player");
+    this.send("ret_player");
+};
+GameClient.prototype.onClose = function (event) {
     console.log('onClose');
-    sendTxt("rem_player");
-    sendTxt("ret_player");
-    game.updatePlayers();
-};
 
-function onMessage(evt) {
-    game.players = evt.data;
-    game.updatePlayers();
+    this.send("rem_player");
+    this.send("ret_player");
 };
+GameClient.prototype.onMessage = function (event) {
+    console.log('onMessage' + event);
 
-function onError(evt) {
-    console.log('onError' + evt.data);
-    sendTxt("rem_player");
-    sendTxt("ret_player");
-    game.updatePlayers();
+    game.setPlayers(event.data);
+};
+GameClient.prototype.onError = function (event) {
+    console.log('onError ' + event.data);
+
+    this.send("rem_player");
+    this.send("ret_player");
 };

@@ -212,8 +212,18 @@ var Game = function (config) {
     this.players = 0;
     this.maxPlayers = config.maxPlayers || 10;
     this.debug = config.debug || false;
+    this.server = null;
     this.isMultiplayer = config.isMultiplayer || false;
     this.DOMHandler = new DOMHandler(this);
+
+    if (this.isMultiplayer) {
+        if (config.servers) {
+            this.server = new GameClient({servers: config.servers, game: this});
+            this.server.connect();
+        } else {
+            throw new Error("A default server should be provided");
+        }
+    }
 
     if (this.debug) {
         this.initGui();
@@ -271,6 +281,10 @@ Game.prototype.initCamera = function () {
 Game.prototype.updatePlayers = function () {
     this.DOMHandler.setPlayers(this.players);
 };
+Game.prototype.setPlayers = function (players) {
+    this.players = players;
+    this.updatePlayers();
+};
 Game.prototype.initSun = function () {
     var sun = new Sun();
     sun = sun.create();
@@ -302,7 +316,7 @@ Game.prototype.initSpaceShip = function () {
         this.createVertexShader(),
         this.createFragmentShader()
     );
-    spaceShip.position.x = Math.random() * 500 + 100;
+    spaceShip.position.x = Math.random() * 200 + 100;
     spaceShip.rotation.z = 90 * Math.PI / 180;
 
     return spaceShip;
