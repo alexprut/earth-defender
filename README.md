@@ -76,6 +76,12 @@ Since browser can't receive a WebSocket connection, but only initialize one, cli
 due to the limitation of the protocol (to solve that problema WebRTC can be used).
 
 
+## Server
+The server is written in Erlang language, the libraries used are:
+
+*  [Cowboy](https://github.com/ninenines/cowboy): which provides support for HTTP and WebSockets
+*  [Jiffy](https://github.com/davisp/jiffy): a library for handling JSON as external data representation
+
 Licence
 -------
 Licensed under the MIT License – see the LICENSE file for details.

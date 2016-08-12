@@ -1,187 +1,4 @@
 /////////////////////////////////////////////////////
-// three.js Game Elements
-/////////////////////////////////////////////////////
-
-var Light = function (lightPosition, lightPower, ambientValue, rho) {
-    this.lightPosition = lightPosition;
-    this.lightPower = lightPower;
-    this.ambientValue = ambientValue;
-    this.rho = rho;
-};
-Light.prototype.constructor = Light;
-
-
-var Element = function (texture) {
-    this.texture = texture;
-};
-Element.prototype.createShaderMaterial = function (uniforms, vertexShader, fragmentShader) {
-    uniforms.texture.value = new THREE.ImageUtils.loadTexture(this.texture);
-
-    return new THREE.ShaderMaterial({
-        uniforms: uniforms,
-        vertexShader: vertexShader,
-        fragmentShader: fragmentShader,
-        wireframe: true
-    });
-};
-
-var Earth = function () {
-    Element.call(this, 'img/earth.jpg');
-};
-Earth.prototype = Object.create(Element.prototype);
-Earth.prototype.constructor = Earth;
-Earth.prototype.create = function (uniforms, vertexShader, fragmentShader) {
-    return new THREE.Mesh(
-        new THREE.SphereGeometry(40, 20, 20),
-        this.createShaderMaterial(uniforms, vertexShader, fragmentShader)
-    );
-};
-
-
-var Moon = function () {
-    Element.call(this, 'img/moon.jpg');
-};
-Moon.prototype = Object.create(Element.prototype);
-Moon.prototype.constructor = Moon;
-Moon.prototype.create = function (uniforms, vertexShader, fragmentShader) {
-    return new THREE.Mesh(
-        new THREE.SphereGeometry(20, 15, 15),
-        this.createShaderMaterial(uniforms, vertexShader, fragmentShader)
-    );
-};
-
-
-var Sun = function () {
-    Element.call(this, 'img/sun.jpg');
-};
-Sun.prototype = Object.create(Element.prototype);
-Sun.prototype.constructor = Sun;
-Sun.prototype.create = function () {
-    return new THREE.Mesh(
-        new THREE.SphereGeometry(20, 15, 15),
-        new THREE.MeshBasicMaterial({
-            map: THREE.ImageUtils.loadTexture(this.texture),
-            wireframe: true
-        })
-    );
-};
-
-
-var SpaceShip = function () {
-    Element.call(this, 'img/spaceship.jpg');
-};
-SpaceShip.prototype = Object.create(Element.prototype);
-SpaceShip.prototype.constructor = SpaceShip;
-SpaceShip.prototype.create = function (uniforms, vertexShader, fragmentShader) {
-    return new THREE.Mesh(
-        new THREE.CylinderGeometry(1, 5, 20, 4),
-        this.createShaderMaterial(uniforms, vertexShader, fragmentShader)
-    );
-};
-
-var Bullet = function () {
-};
-Bullet.prototype.constructor = Bullet;
-Bullet.prototype.create = function () {
-    return new THREE.Mesh(
-        new THREE.BoxGeometry(5, 2, 2),
-        new THREE.MeshBasicMaterial({color: 0xff0000})
-    );
-};
-
-
-var Meteorite = function () {
-    Element.call(this, 'img/meteorite.bmp');
-};
-Meteorite.prototype = Object.create(Element.prototype);
-Meteorite.prototype.constructor = Meteorite;
-Meteorite.prototype.create = function (uniforms, vertexShader, fragmentShader) {
-    return new THREE.Mesh(
-        new THREE.SphereGeometry(5, 5, 5),
-        this.createShaderMaterial(uniforms, vertexShader, fragmentShader)
-    );
-};
-
-
-/////////////////////////////////////////////////////
-// Game DOM Handler
-/////////////////////////////////////////////////////
-Element.prototype.remove = function () {
-    this.parentElement.removeChild(this);
-};
-
-var DOMHandler = function (gameHandler) {
-
-    function setLife(life) {
-        document.getElementById('life').innerHTML = life;
-    }
-
-    function setPlayers(players) {
-        document.getElementById('players').innerHTML = players;
-    }
-
-    function setScore(score) {
-        document.getElementById('score').innerHTML = score;
-    }
-
-    function init() {
-        if (!gameHandler.isMultiplayer) {
-            document.getElementById('gameType').className = 'hidden';
-        } else {
-            document.getElementById('gameType-singlePlayer').addEventListener('click', function () {
-                console.log("Single Player game type selected");
-                document.getElementById('gameType').className = 'hidden';
-                gameHandler.stop("Loading ...");
-                gameHandler.start();
-            });
-
-            document.getElementById('gameType-multiPlayer').addEventListener('click', function () {
-                console.log("Multiplayer game type selected");
-            });
-        }
-
-        while (document.getElementsByTagName('canvas').length) {
-            document.getElementsByTagName('canvas')[0].remove();
-        }
-
-        document.body.appendChild(gameHandler.renderer.domElement);
-
-        clearMessage();
-        resetLife();
-        resetScore();
-    }
-
-    function resetLife() {
-        setLife(gameHandler.maxLife);
-    }
-
-    function resetScore() {
-        setScore(0);
-    }
-
-    function setMessage(msg) {
-        document.getElementById('message').className = '';
-        document.getElementById('message').innerHTML = msg;
-    }
-
-    function clearMessage() {
-        document.getElementById('message').className = 'hidden';
-        document.getElementById('message').innerHTML = '';
-    }
-
-    return {
-        init: init,
-        setLife: setLife,
-        setPlayers: setPlayers,
-        setScore: setScore,
-        resetLife: resetLife,
-        resetScore: resetScore,
-        setMessage: setMessage,
-        clearMessage: clearMessage
-    }
-};
-
-/////////////////////////////////////////////////////
 // Game Renderer and Logic
 /////////////////////////////////////////////////////
 var Game = function (config) {
@@ -214,12 +31,11 @@ var Game = function (config) {
     this.debug = config.debug || false;
     this.server = null;
     this.isMultiplayer = config.isMultiplayer || false;
-    this.DOMHandler = new DOMHandler(this);
+    this.DOMHandler = new GameDOMHandler(this);
 
     if (this.isMultiplayer) {
         if (config.servers) {
             this.server = new GameClient({servers: config.servers, game: this});
-            this.server.connect();
         } else {
             throw new Error("A default server should be provided");
         }
@@ -284,6 +100,9 @@ Game.prototype.updatePlayers = function () {
 Game.prototype.setPlayers = function (players) {
     this.players = players;
     this.updatePlayers();
+};
+Game.prototype.setRoomsList = function (roomList) {
+    this.DOMHandler.updateRoomsList(roomList);
 };
 Game.prototype.initSun = function () {
     var sun = new Sun();
@@ -461,7 +280,6 @@ Game.prototype.pause = function () {
     cancelAnimationFrame(this.requestAnimationFrameId);
 };
 Game.prototype.start = function () {
-    console.log(this.requestAnimationFrameId);
     if (this.requestAnimationFrameId) {
         this.render();
     } else {

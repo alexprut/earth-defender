@@ -17,8 +17,8 @@ canvas {
 button {
 	display : inline-block;
 	background-color: #1c1433;
-	width: 199px;
-	border: 1px solid #000;
+	width: 200px;
+	border: 1px solid #111133;
 	color: #fff;
 	padding: 0;
 	margin: 0;
@@ -66,13 +66,55 @@ button:hover {
 	font-style: italic;
 }
 
-#gameType, #message {
+#gameType, #message, #gameRoom {
 	position: absolute;
 	top: 50%;
 	left: 50%;
 	padding: 0;
 	text-align: center;
 	text-decoration: none;
+}
+
+#gameRoom {
+	width: 400px;
+	height: 200px;
+	margin-left: -200px;
+	margin-top: -100px;
+}
+
+#gameRoom #gameRoom-list {
+	width: 400px;
+	display: block;
+	height: 200px;
+	overflow: scroll;
+	font-size: 13px;
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	background-color: #1c1433;
+	color: #fff;
+	font-family: "Courier New", Courier, monospace;
+	border: none;
+	cursor: pointer;
+}
+
+#gameRoom #gameRoom-list li {
+	display: block;
+	height: 40px;
+	width: 360px;
+	line-height: 40px;
+	border: 1px solid #111133;
+	margin: 0;
+	text-align: left;
+	padding: 0 20px;
+}
+
+#gameRoom #gameRoom-list li:hover {
+	background: #6e7be6;
+}
+
+#gameRoom #gameRoom-list li.selected {
+	background: #6e7be6;
 }
 
 #gameType {

@@ -5,13 +5,10 @@
 %% API.
 -export([start/2]).
 -export([stop/1]).
--import(counter, [start/0, inc/0]).
-
 
 %% API.
 start(_Type, _Args) ->
-  counter:start(),
-  inc(),
+  global_rooms_state:start(),
   Dispatch = cowboy_router:compile([
     {'_', [{"/websocket/", ws_handler, []}]}
   ]),
