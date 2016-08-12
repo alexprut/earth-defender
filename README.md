@@ -71,9 +71,29 @@ Below you can see the instructions for building and starting the game _client_ a
     ```
 
 ## Architecture
-To allow multiplayer mode the WebSocket technology is used, a protocol over HTTP for asynchronous communication that can occur concurrently.
+To allow multiplayer mode play the WebSocket technology is used, a protocol over HTTP for asynchronous communication that can occur concurrently.
 Since browser can't receive a WebSocket connection, but only initialize one, client to client (P2P) connections is not possibile
-due to the limitation of the protocol (to solve that problema WebRTC can be used).
+due to the limitation of the protocol (to solve that problem WebRTC can be used).
+
+### General Architecture
+![General Architecture](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/General-Architecture.png)
+
+Above in the image is illustrated the general architecture of multiplayer game. The client entities (or players) are just
+browsers with support to WebSockets and WebGL. At first the clients (browser) make a request to the DNS in order to get the address of the WebServer, the DNS is also responsible for the Load Balancing. Once the DNS responses with the address to one of the WebServers the client
+fetches all the assets (js, images, css, ...). The WebServer is only responsible for providing the game assets, not less nor more.
+As last step the client contact one of the servers to join a game room or create one and then play. The servers are written in Erlang language
+and intended to be fault tolerant and distributed.
+
+### Use Cases
+
+#### Multiplayer, create new room
+Below you can see the user interface:
+
+![UI, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/UI-Use-Case-Multiplayer-create-Room.png)
+
+Below you can see the message exchanged between the client and the server:
+
+![Flow Diagram, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/Flow-Diagram-Use-Case-Multiplayer-create-Room.png)
 
 
 ## Server
