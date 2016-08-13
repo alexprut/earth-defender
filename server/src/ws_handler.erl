@@ -58,6 +58,8 @@ websocket_info({Event, Data}, Req, State) ->
       reply([<<"player_id">>, Data], Req, State);
     rooms_list ->
       reply([<<"rooms_list">>, Data], Req, State);
+    room_players_number ->
+      reply([<<"room_players_number">>, Data], Req, State);
     Default ->
       erlang:display("Warning: websocket_info can not handle event:"),
       erlang:display(Default),
