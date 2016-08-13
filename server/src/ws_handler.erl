@@ -25,8 +25,10 @@ websocket_handle({text, Msg}, Req, State) ->
       Player = player:start(self()),
       PlayerId = uuid:generate(),
       Player ! {player_id, PlayerId},
-      global_rooms_state ! {room_player_add, RoomId = Data, {PlayerId, Player}},
-      reply_ok(Req, State);
+      RoomId = Data,
+      NewState = State#state{player_id = PlayerId, room_id = RoomId},
+      global_rooms_state ! {room_player_add, RoomId = RoomId, {PlayerId, Player}},
+      reply_ok(Req, NewState);
     "room_add" ->
       RoomId = uuid:generate(),
       erlang:display("Room id:"),
