@@ -22,7 +22,11 @@ websocket_handle({text, Msg}, Req, State) ->
       global_rooms_state ! {rooms_list, self()},
       reply_ok(Req, State);
     "room_join" ->
-      erlang:display("");
+      Player = player:start(self()),
+      PlayerId = uuid:generate(),
+      Player ! {player_id, PlayerId},
+      global_rooms_state ! {room_player_add, RoomId = Data, {PlayerId, Player}},
+      reply_ok(Req, State);
     "room_add" ->
       RoomId = uuid:generate(),
       erlang:display("Room id:"),

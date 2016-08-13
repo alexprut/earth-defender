@@ -15,7 +15,8 @@ loop(State) ->
     {websocket, WebSocket} ->
       loop(State#state{websocket = WebSocket});
     {room_players_number, Players_number} ->
-      State#state.websocket ! {room_players_number, Players_number};
+      State#state.websocket ! {room_players_number, Players_number},
+      loop(State);
     stop ->
       stop()
   end.

@@ -85,6 +85,8 @@ As last step the client contact one of the servers to join a game room or create
 and intended to be fault tolerant and distributed.
 
 ### Use Cases
+Below are listed the most relevant use cases, user interfaces and the
+flow diagrams of the messages exchanged between the client and server.
 
 #### Multiplayer, create new room
 Below you can see the user interface:
@@ -95,6 +97,14 @@ Below you can see the message exchanged between the client and the server:
 
 ![Flow Diagram, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/Flow-Diagram-Use-Case-Multiplayer-create-Room.png)
 
+#### Multiplayer, join a room
+Below you can see the user interface:
+
+![UI, Multiplayer, join new room](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/UI-Use-Case-Multiplayer-join-Room.png)
+
+Below you can see the message exchanged between the client and the server:
+
+![Flow Diagram, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/Flow-Diagram-Use-Case-Multiplayer-join-Room.png)
 
 ## Server
 The server is written in Erlang language, the libraries used are:

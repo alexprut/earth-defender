@@ -26,7 +26,7 @@ var GameDOMHandler = function (gameHandler) {
             var roomHTML = "";
             var roomId;
             while (roomId = roomsList.shift()) {
-                roomHTML = roomHTML + "<li data-id='" + roomId + "'>" + roomId + "<\li>";
+                roomHTML = roomHTML + "<li data-roomid='" + roomId + "'>" + roomId + "<\li>";
             }
 
             document.getElementById('gameRoom-list').innerHTML = roomHTML;
@@ -38,17 +38,29 @@ var GameDOMHandler = function (gameHandler) {
         document.getElementById('gameType').className = '';
     }
 
-    function hideComponentGameType () {
+    function hideComponentGameType() {
         document.getElementById('gameType').className = 'hidden';
     }
 
-    function showComponentGameRoom () {
+    function showComponentGameRoom() {
         hideComponentGameType();
         document.getElementById('gameRoom').className = '';
     }
 
-    function hideComponentGameRoom () {
+    function hideComponentGameRoom() {
         document.getElementById('gameRoom').className = 'hidden';
+    }
+
+    // Return the id of the selected room to join in multiplayer mode, otherwise return null
+    function getSelectedRoom() {
+        var tmp = document.getElementById('gameRoom-list').getElementsByTagName('li');
+        for (var i = 0; i < tmp.length; i++) {
+            if (tmp[i].className = "selected") {
+                return tmp[i].getAttribute('data-roomid');
+            }
+        }
+
+        return null;
     }
 
     function init() {
@@ -70,8 +82,12 @@ var GameDOMHandler = function (gameHandler) {
 
                 document.getElementById('gameRoom-join').addEventListener('click', function () {
                     hideComponentGameRoom();
-                    gameHandler.stop("Loading ...");
-                    gameHandler.start();
+                    // Control if a room was selected, otherwise just do nothing when the Join button is pressed
+                    if (getSelectedRoom()) {
+                        gameHandler.server.send('room_join', getSelectedRoom());
+                        gameHandler.stop("Loading ...");
+                        gameHandler.start();
+                    }
                 });
 
                 document.getElementById('gameRoom-create').addEventListener('click', function () {
@@ -135,6 +151,7 @@ var GameDOMHandler = function (gameHandler) {
         resetScore: resetScore,
         setMessage: setMessage,
         clearMessage: clearMessage,
-        updateRoomsList: updateRoomsList
+        updateRoomsList: updateRoomsList,
+        getSelectedRoom: getSelectedRoom
     }
 };
