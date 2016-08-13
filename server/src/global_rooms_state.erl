@@ -23,11 +23,21 @@ loop(State) ->
       loop(State);
     {room_remove, RoomId} ->
       NewState = State#state{rooms = room_remove(State#state.rooms, RoomId)},
-      loop(NewState)
+      loop(NewState);
+    {room_player_add, RoomId, Player} ->
+      RoomPID = search_room_pid(RoomId, State#state.rooms),
+      RoomPID ! {player_add, Player},
+      loop(State)
   end.
 
+search_room_pid(RoomId, [{RoomId, RoomPID} | XS]) -> RoomPID;
+search_room_pid(RoomId, [_ | XS]) -> search_room_pid(RoomId, XS);
+search_room_pid(RoomId, []) ->
+  erlang:display("Warning: there is no such a room of id: "),
+  erlang:display(RoomId).
+
 player_remove([{RoomId, RoomPID} | XS], {RoomId, PlayerId}) ->
-  RoomPID ! {player_remove, PlayerId, self()},
+  RoomPID ! {player_remove, PlayerId},
   XS;
 player_remove([X | XS], RP) -> lists:append([X], player_remove(XS, RP));
 player_remove([], _) -> [].

@@ -11,11 +11,13 @@ loop(State) ->
   receive
     {room_id, RoomId} ->
       loop(State#state{id = RoomId});
-    {player_remove, PlayerId, From} ->
+    {player_remove, PlayerId} ->
       NewState = State#state{players = player_remove(State#state.players, PlayerId)},
       if
         length(NewState#state.players) == 0 ->
-          From ! {room_remove, State#state.id}
+          global_rooms_state ! {room_remove, State#state.id};
+        true ->
+          broadcast_players_number(NewState#state.players, length(NewState#state.players))
       end,
       loop(NewState);
     {player_add, {PlayerId, PlayerPID}} ->
