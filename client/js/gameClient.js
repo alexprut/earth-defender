@@ -58,7 +58,7 @@ GameClient.prototype.onMessage = function (event) {
             this.game.setRoomsList(data);
             break;
         default:
-            console.log("Warning: onMessage can not handle action" + "\"" + action + "\"");
+            console.log("Warning: onMessage can not handle action " + "\"" + action + "\"");
     }
 };
 GameClient.prototype.onError = function (event) {

@@ -17,6 +17,10 @@ loop(State) ->
         length(NewState#state.players) == 0 ->
           From ! {room_remove, State#state.id}
       end,
+      loop(NewState);
+    {player_add, {PlayerId, PlayerPID}} ->
+      NewState = State#state{players = [{PlayerId, PlayerPID} | State#state.players]},
+      broadcast_players_number(NewState#state.players, length(NewState#state.players)),
       loop(NewState)
   end.
 
@@ -25,5 +29,10 @@ player_remove([{PlayerId, PlayerPID} | XS], PlayerId) ->
   XS;
 player_remove([X | XS], PlayerId) -> lists:append([X], player_remove(XS, PlayerId));
 player_remove([], _) -> [].
+
+broadcast_players_number([], _) -> ok;
+broadcast_players_number([{PlayerId, PlayerPID} | XS], Players_number) ->
+  PlayerPID ! {room_players_number, Players_number},
+  broadcast_players_number(XS, Players_number).
 
 stop() -> exit(self(), normal).
