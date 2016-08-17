@@ -132,6 +132,11 @@ Game.prototype.createRender = function () {
 
     return renderer;
 };
+Game.prototype.setRendererSize = function (width, height) {
+    if (this.renderer) {
+        this.renderer.setSize(width, height);
+    }
+};
 Game.prototype.createSpaceShip = function () {
     var spaceShip = new SpaceShip();
     spaceShip = spaceShip.create(
