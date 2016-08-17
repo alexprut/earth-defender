@@ -48,6 +48,7 @@ var Game = function (config) {
 };
 Game.prototype.constructor = Game;
 Game.prototype.createUniforms = function () {
+    var loader = new THREE.TextureLoader();
     var uniforms = {
         lightPosition: {
             type: 'v3',
@@ -67,7 +68,7 @@ Game.prototype.createUniforms = function () {
         },
         texture: {
             type: "t",
-            value: THREE.ImageUtils.loadTexture('img/earth.jpg')
+            value: loader.load('img/earth.jpg')
         }
     };
 
