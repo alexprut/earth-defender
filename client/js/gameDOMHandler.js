@@ -6,6 +6,11 @@ Element.prototype.remove = function () {
 };
 
 var GameDOMHandler = function (gameHandler) {
+    (function updateRendererSize() {
+        document.body.addEventListener("onresize", function () {
+            gameHandler.setRendererSize(window.innerWidth, window.innerHeight);
+        })
+    })();
 
     function setLife(life) {
         document.getElementById('life').innerHTML = life;
