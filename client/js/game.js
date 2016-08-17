@@ -43,7 +43,7 @@ var Game = function (config) {
     }
 
     if (this.debug) {
-        this.initGui();
+        this.createGui();
     }
 };
 Game.prototype.constructor = Game;
@@ -92,7 +92,7 @@ Game.prototype.decreaseLife = function () {
     this.setLife(this.life - 200);
     this.server.send("action_earth_collision");
 };
-Game.prototype.initCamera = function () {
+Game.prototype.createCamera = function () {
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
     camera.position.z = 500;
 
@@ -108,14 +108,14 @@ Game.prototype.setPlayers = function (players) {
 Game.prototype.setRoomsList = function (roomList) {
     this.DOMHandler.updateRoomsList(roomList);
 };
-Game.prototype.initSun = function () {
+Game.prototype.createSun = function () {
     var sun = new Sun();
     sun = sun.create();
     sun.position.x = 400;
 
     return sun;
 };
-Game.prototype.initEarth = function () {
+Game.prototype.createEarth = function () {
     var earth = new Earth();
     earth = earth.create(
         this.createUniforms(),
@@ -126,13 +126,13 @@ Game.prototype.initEarth = function () {
 
     return earth;
 };
-Game.prototype.initRender = function () {
+Game.prototype.createRender = function () {
     var renderer = new THREE.WebGLRenderer({antialias: true});
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     return renderer;
 };
-Game.prototype.initSpaceShip = function () {
+Game.prototype.createSpaceShip = function () {
     var spaceShip = new SpaceShip();
     spaceShip = spaceShip.create(
         this.createUniforms(),
@@ -144,7 +144,7 @@ Game.prototype.initSpaceShip = function () {
 
     return spaceShip;
 };
-Game.prototype.initMoon = function () {
+Game.prototype.createMoon = function () {
     var tmpMoon = new Moon();
     tmpMoon = tmpMoon.create(
         this.createUniforms(),
@@ -158,7 +158,7 @@ Game.prototype.initMoon = function () {
 
     return moon;
 };
-Game.prototype.initMeteorites = function (numMeteorites) {
+Game.prototype.createMeteorites = function (numMeteorites) {
     var meteorites = new THREE.Object3D();
     for (var i = 0; i < numMeteorites; i++) {
         var meteorite = new Meteorite().create(
@@ -175,7 +175,7 @@ Game.prototype.initMeteorites = function (numMeteorites) {
 
     return meteorites;
 };
-Game.prototype.initStats = function () {
+Game.prototype.createStats = function () {
     var stats = new Stats();
     stats.setMode(0);
 
@@ -183,7 +183,7 @@ Game.prototype.initStats = function () {
 
     return stats;
 };
-Game.prototype.initGui = function () {
+Game.prototype.createGui = function () {
     var gui = new dat.GUI();
 
     guiParams = {
@@ -204,7 +204,7 @@ Game.prototype.initGui = function () {
 
     return gui;
 };
-Game.prototype.initControls = function () {
+Game.prototype.createControls = function () {
     var controls = new THREE.OrbitControls(this.camera);
     controls.maxDistance = 1000;
     controls.minDistance = 80;
@@ -256,16 +256,16 @@ Game.prototype.initEventShoot = function () {
     }).bind(this);
 };
 Game.prototype.init = function () {
-    this.renderer = this.initRender();
+    this.renderer = this.createRender();
     this.scene = new THREE.Scene();
-    this.camera = this.initCamera();
-    this.stats = this.initStats();
-    this.controls = this.initControls();
-    this.sun = this.initSun();
-    this.earth = this.initEarth();
-    this.moon = this.initMoon();
-    this.spaceShip = this.initSpaceShip();
-    this.meteorites = this.initMeteorites(this.maxMeteorietes);
+    this.camera = this.createCamera();
+    this.stats = this.createStats();
+    this.controls = this.createControls();
+    this.sun = this.createSun();
+    this.earth = this.createEarth();
+    this.moon = this.createMoon();
+    this.spaceShip = this.createSpaceShip();
+    this.meteorites = this.createMeteorites(this.maxMeteorietes);
 
     this.scene.add(this.sun);
     this.scene.add(this.moon);
