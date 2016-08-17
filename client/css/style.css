@@ -146,6 +146,6 @@ body .dg.a {
 #stats {
 	position : fixed;
 	z-index: 1000;
-	right: 245px;
-	top: 0;
+	left: 0;
+	bottom: 0;
 }

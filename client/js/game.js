@@ -32,6 +32,7 @@ var Game = function (config) {
     this.server = null;
     this.isMultiplayer = config.isMultiplayer || false;
     this.DOMHandler = new GameDOMHandler(this);
+    this.roomId = null;
 
     if (this.isMultiplayer) {
         if (config.servers) {
@@ -80,13 +81,16 @@ Game.prototype.createVertexShader = function () {
 Game.prototype.createFragmentShader = function () {
     return document.getElementById("fragment").textContent;
 };
-Game.prototype.updateLife = function () {
-    if (this.life > 0) {
-        this.life -= 200;
-        this.DOMHandler.setLife(this.life);
-    } else {
+Game.prototype.setLife = function (life) {
+    this.life = Math.max(life, 0);
+    this.DOMHandler.setLife(this.life);
+    if (this.life === 0) {
         this.stop("Game Over");
     }
+};
+Game.prototype.decreaseLife = function () {
+    this.setLife(this.life - 200);
+    this.server.send("action_earth_collision");
 };
 Game.prototype.initCamera = function () {
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
@@ -329,7 +333,7 @@ Game.prototype.render = function () {
             this.meteorites.children.splice(index, 1);
             this.counter = 30;
             this.earth.material.uniforms.ambient.value = new THREE.Vector3(0.9, 0.1, 0.1);
-            this.updateLife();
+            this.decreaseLife();
         }
 
         if (x < 0) {

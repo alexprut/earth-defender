@@ -10,8 +10,9 @@ document.body.onload = function () {
         'maxMeteorietes': 200,
         'isMultiplayer': true,
         'maxPlayers': 10,
-        'debug': true,
+        'debug': false,
         'servers': ['127.0.0.1:8888/websocket']
     });
     game.init();
+    game.stop();
 };

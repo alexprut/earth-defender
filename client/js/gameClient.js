@@ -46,7 +46,7 @@ GameClient.prototype.onMessage = function (event) {
     var action = receivedData[0];
     var data = (receivedData.length > 1) ? receivedData[1] : null;
 
-    console.log('onMessage');
+    console.log('onMessage (Receiving)');
     console.log(event);
 
     switch (action) {
@@ -54,8 +54,14 @@ GameClient.prototype.onMessage = function (event) {
             this.game.setPlayers(data);
         case "player_id":
             break;
+        case "room_id":
+            this.game.roomId = data;
+            break;
         case "rooms_list":
             this.game.setRoomsList(data);
+            break;
+        case "game_life":
+            this.game.setLife(data);
             break;
         default:
             console.log("Warning: onMessage can not handle action " + "\"" + action + "\"");

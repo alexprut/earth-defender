@@ -48,6 +48,9 @@ websocket_handle({text, Msg}, Req, State) ->
       {reply, {text, State}, Req, State};
     "players_get" ->
       {reply, {text, State}, Req, State};
+    "action_earth_collision" ->
+      global_rooms_state ! {action_earth_collision, State#state.room_id},
+      reply_ok(Req, State);
     Default ->
       erlang:display("Warning: websocket_handle can not handle event:"),
       erlang:display(Default),
@@ -66,6 +69,8 @@ websocket_info({Event, Data}, Req, State) ->
       reply([<<"rooms_list">>, Data], Req, State);
     room_players_number ->
       reply([<<"room_players_number">>, Data], Req, State);
+    game_life ->
+      reply([<<"game_life">>, Data], Req, State);
     Default ->
       erlang:display("Warning: websocket_info can not handle event:"),
       erlang:display(Default),
