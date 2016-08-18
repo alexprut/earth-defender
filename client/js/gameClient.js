@@ -63,6 +63,9 @@ GameClient.prototype.onMessage = function (event) {
         case "game_life":
             this.game.setLife(data);
             break;
+        case "asteroid_position":
+            this.game.setAsteroidPosition(data);
+            break;
         default:
             console.log("Warning: onMessage can not handle action " + "\"" + action + "\"");
     }
