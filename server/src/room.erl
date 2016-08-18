@@ -3,7 +3,7 @@
 -export([start/1, loop/1]).
 
 % Data in #state.players saved as: {player_id, player_pid}
--record(state, {players = [], id, life = 1000}).
+-record(state, {players = [], id, life = 1000, a_position}).
 
 start(RoomId) -> spawn(room, loop, [#state{id = RoomId}]).
 
@@ -33,6 +33,10 @@ loop(State) ->
       end,
       NewState = State#state{life = NewLife},
       broadcast(State#state.players, game_life, NewLife),
+      loop(NewState);
+    {action_new_player_join, Position} ->
+      NewState = State#state{a_position = Position},
+      broadcast(State#state.players, asteroid_position, Position),
       loop(NewState)
   end.
 

@@ -88,6 +88,12 @@ var GameDOMHandler = function (gameHandler) {
                         gameHandler.stop("Loading ...");
                         gameHandler.start();
                     }
+                        var data = [];
+                        var tmp = game.meteorites.children;
+                        for(var i = 0; i < game.meteorites.children.length; i++){
+                           data.push([tmp[i].position.x,tmp[i].position.y,tmp[i].position.z]);
+                           }
+                        gameHandler.server.send('action_new_player_join',data);
                 });
 
                 document.getElementById('gameRoom-create').addEventListener('click', function () {

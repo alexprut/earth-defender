@@ -94,7 +94,7 @@ Game.prototype.decreaseLife = function () {
 };
 Game.prototype.initCamera = function () {
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
-    camera.position.z = 500;
+    camera.position.x = 500;
 
     return camera;
 };
@@ -175,6 +175,15 @@ Game.prototype.initMeteorites = function (numMeteorites) {
 
     return meteorites;
 };
+
+Game.prototype.setAsteroidPosition = function (vector3){
+    for (var i = 0; i < vector3.length; i++){
+        this.meteorites.children[i].position.x = vector3[i][0];
+        this.meteorites.children[i].position.y = vector3[i][1];
+        this.meteorites.children[i].position.z = vector3[i][2];
+        }
+};
+
 Game.prototype.initStats = function () {
     var stats = new Stats();
     stats.setMode(0);
@@ -298,8 +307,8 @@ Game.prototype.stop = function (msg) {
 Game.prototype.render = function () {
     this.requestAnimationFrameId = requestAnimationFrame(this.render.bind(this));
 
-    this.camera.position.x = this.spaceShip.position.x + 15;
-    this.camera.position.y = this.spaceShip.position.y;
+    this.camera.position.x = this.spaceShip.position.x + 45;
+    this.camera.position.y = this.spaceShip.position.y + 10;
     this.camera.position.z = this.spaceShip.position.z;
     this.stats.begin();
     this.renderer.render(this.scene, this.camera);
@@ -323,7 +332,6 @@ Game.prototype.render = function () {
         var x = meteorite.position.x;
         var y = meteorite.position.y;
         var z = meteorite.position.z;
-
         // Planets become Red near the earth
         if (-60 < x && x < 60 && -60 < y && y < 60 && -60 < z && z < 60) {
             this.meteorites.children[index].material.uniforms.ambient.value = new THREE.Vector3(0.9, 0.1, 0.1);
