@@ -129,7 +129,7 @@ The only library used for the 3D rendering is Three.js.
 
 Below you can see the client architecture:
 
-![Flow Diagram, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/Client-Architecture.png)
+![Client Architecture](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/Client-Architecture.png)
 
 The ```Game``` class is the core of the game, it contains the game renderer and logic, it uses various instances of the ```GameElements``` class which contains game basic objects.
 Accordingly the classes ```GameMultiplayer``` and ```GameSingleplayer``` extends the basic game logic and add the features for the multiplayer and singleplayer game mode.
@@ -141,6 +141,26 @@ The server is written in Erlang language, the libraries used are:
 
 *  [Cowboy](https://github.com/ninenines/cowboy): which provides support for HTTP and WebSockets
 *  [Jiffy](https://github.com/davisp/jiffy): a library for handling JSON as external data representation
+
+Below you can see the client architecture:
+
+![Server Architecture](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/Server-Architecture.png)
+
+The server is intended to be fault-tolerant oriented. As mentioned before the Cowboy
+module is used to handle the WebSocket connection and the initial HTTP handshake of the
+last mentioned protocol. The file ```websocket_app.erl``` is responsible for spawning
+the one new server process (i.e. Cowboy) which will be the same for any request, ```websocket_sup.erl```
+is the supervisor (i.e. if Cowboy crashes it restarts the process).
+The core file that handles the WebSocket requests is ```ws_handler.erl```, a fresh new instance
+is made at every new client connection. The ```config.erl``` file contains all the configuration,
+and there is the place where the server is configured with various options.
+Noteworthy is that the ```global_room_state.erl``` is spawned and initialized at the bootstraping
+of the Cowboy application, the last mentioned file is a global state, that is where all the
+information about room, players and other stuff is kept and shared among all the clients.
+Finally the ```room.erl``` file spawns a new process every time a new room is created, and it is destroyed
+when no more players are inside the room, obviously the ```player.erl``` file spawns a new process
+for every client, and contains the information of the player.
+
 
 License
 -------
