@@ -6,6 +6,11 @@ Element.prototype.remove = function () {
 };
 
 var GameDOMHandler = function (gameHandler) {
+    (function updateRendererSize() {
+        document.body.addEventListener("onresize", function () {
+            gameHandler.setRendererSize(window.innerWidth, window.innerHeight);
+        })
+    })();
 
     function setLife(life) {
         document.getElementById('life').innerHTML = life;
@@ -20,16 +25,21 @@ var GameDOMHandler = function (gameHandler) {
     }
 
     function updateRoomsList(roomsList) {
+        var handler = document.getElementById('gameRoom-list');
+        handler.innerHTML = "";
+
         if (roomsList.length === 0) {
-            document.getElementById('gameRoom-list').innerHTML = "<li>" + "No results" + "<\li>";
+            var li = document.createElement("li");
+            li.innerHTML = "No results";
+            handler.appendChild(li);
         } else {
-            var roomHTML = "";
             var roomId;
             while (roomId = roomsList.shift()) {
-                roomHTML = roomHTML + "<li data-roomid='" + roomId + "'>" + roomId + "<\li>";
+                var li = document.createElement("li");
+                li.setAttribute("data-roomid", roomId);
+                li.innerHTML = roomId;
+                handler.appendChild(li);
             }
-
-            document.getElementById('gameRoom-list').innerHTML = roomHTML;
         }
     }
 
@@ -55,7 +65,7 @@ var GameDOMHandler = function (gameHandler) {
     function getSelectedRoom() {
         var tmp = document.getElementById('gameRoom-list').getElementsByTagName('li');
         for (var i = 0; i < tmp.length; i++) {
-            if (tmp[i].className = "selected") {
+            if (tmp[i].className = "selected" && tmp[i].getAttribute('data-roomid')) {
                 return tmp[i].getAttribute('data-roomid');
             }
         }
@@ -81,9 +91,9 @@ var GameDOMHandler = function (gameHandler) {
                 showComponentGameRoom();
 
                 document.getElementById('gameRoom-join').addEventListener('click', function () {
-                    hideComponentGameRoom();
                     // Control if a room was selected, otherwise just do nothing when the Join button is pressed
                     if (getSelectedRoom()) {
+                        hideComponentGameRoom();
                         gameHandler.server.send('room_join', getSelectedRoom());
                         gameHandler.stop("Loading ...");
                         gameHandler.start();
