@@ -15,7 +15,8 @@ var Element = function (texture) {
     this.texture = texture;
 };
 Element.prototype.createShaderMaterial = function (uniforms, vertexShader, fragmentShader) {
-    uniforms.texture.value = new THREE.ImageUtils.loadTexture(this.texture);
+    var loader = new THREE.TextureLoader();
+    uniforms.texture.value = loader.load(this.texture);
 
     return new THREE.ShaderMaterial({
         uniforms: uniforms,
@@ -57,10 +58,11 @@ var Sun = function () {
 Sun.prototype = Object.create(Element.prototype);
 Sun.prototype.constructor = Sun;
 Sun.prototype.create = function () {
+    var loader = new THREE.TextureLoader();
     return new THREE.Mesh(
         new THREE.SphereGeometry(20, 15, 15),
         new THREE.MeshBasicMaterial({
-            map: THREE.ImageUtils.loadTexture(this.texture),
+            map: loader.load(this.texture),
             wireframe: true
         })
     );
