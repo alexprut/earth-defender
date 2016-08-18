@@ -5,6 +5,22 @@ __Live preview__: [https://alexprut.github.io/earth-defender/](https://alexprut.
 
 ![Demo - Earth Defender](https://github.com/alexprut/earth-defender/raw/master/img/demo.png)
 
+
+## Table of contents
+1. [Installation](#installation)
+    1. [Client](#client)
+    2. [Server](#client)
+2. [Architecture](#architecture)
+    1. [General Architecture](#general-architecture)
+    2. [Use Cases](#use-cases)
+        1. [Multiplayer, create new room](#multiplayer-create-new-room)
+        2. [Multiplayer, join a room](#multiplayer-join-a-room)
+    4. [Client](#client-1)
+    3. [Server](#server-1)
+3. [License](#license)
+    
+
+
 ## Installation
 Below you can see the instructions for building and starting the game _client_ and _server_.
 
@@ -106,13 +122,27 @@ Below you can see the message exchanged between the client and the server:
 
 ![Flow Diagram, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/Flow-Diagram-Use-Case-Multiplayer-join-Room.png)
 
-## Server
+### Client
+The client is written using raw CSS, HTML & JavaScript.
+Here the word client is an abuse, since it is intended as the game renderer/logic itself and the software used to communicate with the server in case of multiplayer game mode.
+The only library used for the 3D rendering is Three.js.
+
+Below you can see the client architecture:
+
+![Flow Diagram, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/Client-Architecture.png)
+
+The ```Game``` class is the core of the game, it contains the game renderer and logic, it uses various instances of the ```GameElements``` class which contains game basic objects.
+Accordingly the classes ```GameMultiplayer``` and ```GameSingleplayer``` extends the basic game logic and add the features for the multiplayer and singleplayer game mode.
+In case a multiplayer game mode is selected the ```GameMultiplayer``` class uses the ```GameClient``` class in order to be able to have a handler and a WebSocket connection with one of the servers.
+Finally the ```GameDOMHandler``` class is responsible of the DOM manipulation activities, it is the class that moves things inside the browser.
+
+### Server
 The server is written in Erlang language, the libraries used are:
 
 *  [Cowboy](https://github.com/ninenines/cowboy): which provides support for HTTP and WebSockets
 *  [Jiffy](https://github.com/davisp/jiffy): a library for handling JSON as external data representation
 
-Licence
+License
 -------
 Licensed under the MIT License – see the LICENSE file for details.
 
