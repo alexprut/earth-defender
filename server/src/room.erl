@@ -34,9 +34,12 @@ loop(State) ->
       NewState = State#state{life = NewLife},
       broadcast(State#state.players, game_life, NewLife),
       loop(NewState);
-    {action_new_player_join, Position} ->
+    {action_new_player_join} ->
+      broadcast([lists:last(State#state.players)], asteroid_position, []),
+      loop(State);
+    {master_asteroid_position, Position} ->
       NewState = State#state{a_position = Position},
-      broadcast(State#state.players, asteroid_position, Position),
+      broadcast(State#state.players, asteroid_position_set, Position),
       loop(NewState)
   end.
 

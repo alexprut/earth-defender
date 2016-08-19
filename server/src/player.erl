@@ -21,8 +21,11 @@ loop(State) ->
     {game_life, Life} ->
       WebSocket ! {game_life, Life},
       loop(State);
-    {asteroid_position, Position} ->
-      WebSocket ! {asteroid_position, Position},
+    {asteroid_position, _} ->
+      WebSocket ! {asteroid_position, null},
+      loop(State);
+    {asteroid_position_set, Position} ->
+      WebSocket ! {asteroid_position_set, Position},
       loop(State);
     stop ->
       stop()
