@@ -95,10 +95,10 @@ var GameDOMHandler = function (gameHandler) {
                     if (getSelectedRoom()) {
                         hideComponentGameRoom();
                         gameHandler.server.send('room_join', getSelectedRoom());
+                        gameHandler.server.send('action_new_player_join');
                         gameHandler.stop("Loading ...");
                         gameHandler.start();
                     }
-                        gameHandler.server.send('action_new_player_join');
                 });
 
                 document.getElementById('gameRoom-create').addEventListener('click', function () {

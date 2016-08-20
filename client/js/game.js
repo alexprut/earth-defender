@@ -21,7 +21,7 @@ var Game = function (config) {
     this.controls = null;
     this.gui = null;
     this.stats = null;
-    this.counter = 0;
+    this.counter = {earthDamage: 0, collisionCheck: 0};
     this.maxLife = config.maxLife || 1000;
     this.life = this.maxLife;
     this.score = 0;
@@ -91,7 +91,16 @@ Game.prototype.setLife = function (life) {
 };
 Game.prototype.decreaseLife = function () {
     this.setLife(this.life - 200);
-    this.server.send("action_earth_collision");
+    if (this.server.websocket) {
+        this.server.send("action_earth_collision");
+    }
+};
+Game.prototype.increaseScore = function () {
+    this.setScore(this.score + 10);
+};
+Game.prototype.setScore = function (score) {
+    this.score = score;
+    this.DOMHandler.setScore(this.score);
 };
 Game.prototype.createCamera = function () {
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
@@ -175,6 +184,7 @@ Game.prototype.createMeteorites = function (numMeteorites) {
         meteorite.position.x = Math.random() * 1000 - Math.random() * 1000;
         meteorite.position.y = Math.random() * 1000 - Math.random() * 1000;
         meteorite.position.z = Math.random() * 1000 - Math.random() * 1000;
+        meteorite.gameUUID = meteorite.uuid;
 
         meteorites.add(meteorite);
     }
@@ -182,23 +192,25 @@ Game.prototype.createMeteorites = function (numMeteorites) {
     return meteorites;
 };
 
-Game.prototype.setAsteroidPosition = function (vector3){
-    for (var i = 0; i < vector3.length; i++){
+Game.prototype.setAsteroidPosition = function (vector3) {
+    for (var i = 0; i < vector3.length; i++) {
         this.meteorites.children[i].position.x = vector3[i][0];
         this.meteorites.children[i].position.y = vector3[i][1];
         this.meteorites.children[i].position.z = vector3[i][2];
-        }
+    }
 };
 
-//Game.prototype.initStats = function () {
-//Game.prototype.createStats = function () {
-//    var stats = new Stats();
-//    stats.setMode(0);
 
-//    document.body.appendChild(stats.domElement);
+Game.prototype.createStats = function () {
+    var stats = new Stats();
+    stats.setMode(0);
 
-//    return stats;}
-//};
+    stats.domElement.id = "stats";
+
+    document.body.appendChild(stats.domElement);
+
+    return stats;
+};
 Game.prototype.createGui = function () {
     var gui = new dat.GUI();
 
@@ -233,6 +245,7 @@ Game.prototype.shoot = function () {
     bullet.position.x = this.spaceShip.position.x - 10;
     bullet.position.y = this.spaceShip.position.y;
     bullet.position.z = this.spaceShip.position.z;
+    bullet.gameUUID = bullet.uuid;
 
     this.bullets.add(bullet);
 
@@ -271,11 +284,56 @@ Game.prototype.initEventShoot = function () {
         }
     }).bind(this);
 };
+Game.prototype.checkCollision = function () {
+    var meteoritesUUIDs = [], bulletsUUIDs = [], id;
+
+    this.meteorites.children.forEach((function (meteorite) {
+        var length = this.bullets.children.length;
+        for (var i = 0; i < length; i++) {
+            if (this.isCollision(meteorite.position, 5, this.bullets.children[i].position, 5)) {
+                meteoritesUUIDs.push(meteorite.gameUUID);
+                bulletsUUIDs.push(this.bullets.children[i].gameUUID);
+                this.increaseScore();
+                break;
+            }
+        }
+    }).bind(this));
+
+    while (id = meteoritesUUIDs.pop()) {
+        var length = this.meteorites.children.length;
+        for (var i = 0; i < length; i++) {
+            if (id === this.meteorites.children[i].gameUUID) {
+                this.meteorites.children.splice(i, 1);
+                break;
+            }
+        }
+    }
+
+    while (id = bulletsUUIDs.pop()) {
+        var length = this.bullets.children.length;
+        for (var i = 0; i < length; i++) {
+            if (id === this.bullets.children[i].gameUUID) {
+                this.bullets.children.splice(i, 1);
+                break;
+            }
+        }
+    }
+};
+Game.prototype.isCollision = function (v1, l1, v2, l2) {
+    // AABB (Axis-aligned bounding boxes)
+    if (((v1.x - l1) <= (v2.x + l2) && (v1.x + l1) >= (v2.x - l2)) &&
+        ((v1.y - l1) <= (v2.y + l2) && (v1.y + l1) >= (v2.y - l2)) &&
+        ((v1.z - l1) <= (v2.z + l2) && (v1.z + l1) >= (v2.z - l2))) {
+        return true;
+    }
+
+    return false;
+};
 Game.prototype.init = function () {
     this.renderer = this.createRender();
     this.scene = new THREE.Scene();
     this.camera = this.createCamera();
-    //this.stats = this.createStats();
+    this.stats = this.createStats();
     this.controls = this.createControls();
     this.sun = this.createSun();
     this.earth = this.createEarth();
@@ -317,9 +375,9 @@ Game.prototype.render = function () {
     this.camera.position.x = this.spaceShip.position.x + 45;
     this.camera.position.y = this.spaceShip.position.y + 10;
     this.camera.position.z = this.spaceShip.position.z;
-    //this.stats.begin();
+    this.stats.begin();
     this.renderer.render(this.scene, this.camera);
-    //this.stats.end();
+    this.stats.end();
 
     // Rotate the sphere
     this.earth.rotation.y += 0.001;
@@ -329,9 +387,15 @@ Game.prototype.render = function () {
         bullet.position.x -= 1;
     }).bind(this));
 
-    this.counter--;
-    if (this.counter === 0) {
+    this.counter.earthDamage--;
+    if (this.counter.earthDamage === 0) {
         this.earth.material.uniforms.ambient.value = this.light.ambientValue;
+    }
+
+    this.counter.collisionCheck--;
+    if (this.counter.collisionCheck <= 0) {
+        this.checkCollision();
+        this.counter.collisionCheck = 10;
     }
 
     this.meteorites.children.forEach((function (meteorite, index) {
@@ -346,7 +410,7 @@ Game.prototype.render = function () {
 
         if (-38 < x && x < 38 && -38 < y && y < 38 && -38 < z && z < 38) {
             this.meteorites.children.splice(index, 1);
-            this.counter = 30;
+            this.counter.earthDamage = 30;
             this.earth.material.uniforms.ambient.value = new THREE.Vector3(0.9, 0.1, 0.1);
             this.decreaseLife();
         }
