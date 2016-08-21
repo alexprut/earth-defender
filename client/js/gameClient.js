@@ -74,6 +74,13 @@ GameClient.prototype.onMessage = function (event) {
         case "asteroid_position_set":
             this.game.setAsteroidPosition(data);
             break;
+        case "ship_position_set":
+            if(data.length>1)
+                this.game.addNewSpaceShip(data);
+            this.game.setPositionSpaceShip(data);
+            break;
+        case "ship_shoot":
+            this.game.shoot_online(data);
         default:
             console.log("Warning: onMessage can not handle action " + "\"" + action + "\"");
     }

@@ -58,6 +58,17 @@ websocket_handle({text, Msg}, Req, State) ->
       Vector3 = Data,
       global_rooms_state ! {master_asteroid_position, Vector3, State#state.room_id},
       reply_ok(Req, State);
+    "ship_position" ->
+      Vector3 = Data,
+      global_rooms_state ! {ship_position, Vector3, State#state.room_id},
+      reply_ok(Req, State);
+    "ship_move" ->
+      Direction = Data,
+      global_rooms_state ! {ship_move, Direction, State#state.room_id},
+      reply_ok(Req, State);
+    "ship_shoot" ->
+      global_rooms_state ! {ship_shoot, Data, State#state.room_id},
+      reply_ok(Req, State);
     Unknown ->
       erlang:display("Warning: websocket_handle can not handle event:"),
       erlang:display(Unknown),
@@ -82,6 +93,10 @@ websocket_info({Event, Data}, Req, State) ->
       reply([<<"asteroid_position">>, Data], Req, State);
     asteroid_position_set ->
       reply([<<"asteroid_position_set">>, Data], Req, State);
+    ship_position_set ->
+      reply([<<"ship_position_set">>, Data], Req, State);
+    ship_shoot ->
+      reply([<<"ship_shoot">>, Data], Req, State);
     Unknown ->
       erlang:display("Warning: websocket_info can not handle event:"),
       erlang:display(Unknown),

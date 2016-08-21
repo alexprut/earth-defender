@@ -27,6 +27,12 @@ loop(State) ->
     {asteroid_position_set, Position} ->
       WebSocket ! {asteroid_position_set, Position},
       loop(State);
+    {ship_position_set, PositionShip} ->
+      WebSocket ! {ship_position_set, PositionShip},
+      loop(State);
+    {ship_shoot, IdShip} ->
+      WebSocket ! {ship_shoot, IdShip},
+      loop(State);
     stop ->
       stop()
   end.

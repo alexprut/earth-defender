@@ -15,7 +15,7 @@ var Game = function (config) {
     this.scene = null;
     this.camera = null;
     this.renderer = null;
-    this.spaceShip = null;
+    this.spaceShip = [];
     this.meteorites = null;
     this.maxMeteorietes = config.maxMeteorietes || 200;
     this.controls = null;
@@ -46,6 +46,9 @@ var Game = function (config) {
         this.createGui();
     }
 };
+
+var index = Math.floor((Math.random() * 1000) + 1);
+
 Game.prototype.constructor = Game;
 Game.prototype.createUniforms = function () {
     var loader = new THREE.TextureLoader();
@@ -140,16 +143,33 @@ Game.prototype.setRendererSize = function (width, height) {
 };
 Game.prototype.createSpaceShip = function () {
     var spaceShip = new SpaceShip();
-    spaceShip = spaceShip.create(
+    spaceShip[index] = spaceShip.create(
         this.createUniforms(),
         this.createVertexShader(),
         this.createFragmentShader()
     );
-    spaceShip.position.x = Math.random() * 200 + 100;
-    spaceShip.rotation.z = 90 * Math.PI / 180;
+    spaceShip[index].position.x = Math.random() * 200 + 100;
+    spaceShip[index].rotation.z = 90 * Math.PI / 180;
 
-    return spaceShip;
+    return spaceShip[index];
 };
+
+Game.prototype.addNewSpaceShip = function (index) {
+    for(var i = 0; i < index.length; i++){
+        if(typeof this.spaceShip[index[i][0]] == "undefined")
+            this.spaceShip[index[i][0]] = this.createSpaceShip();
+            this.scene.add(this.spaceShip[index[i][0]]);
+            }
+};
+
+Game.prototype.setPositionSpaceShip = function (position) {
+    for(var index = 0; index < position.length; index++){
+        this.spaceShip[position[index][0]].position.x = position[index][1];
+        this.spaceShip[position[index][0]].position.y = position[index][2];
+        this.spaceShip[position[index][0]].position.z = position[index][3];
+        }
+};
+
 Game.prototype.createMoon = function () {
     var tmpMoon = new Moon();
     tmpMoon = tmpMoon.create(
@@ -211,7 +231,7 @@ Game.prototype.createGui = function () {
     debugFolder.add(guiParams, 'wireframe').listen().onFinishChange((function () {
         this.sun.material.wireframe = guiParams.wireframe;
         this.earth.material.wireframe = guiParams.wireframe;
-        this.spaceShip.material.wireframe = guiParams.wireframe;
+        this.spaceShip[index].material.wireframe = guiParams.wireframe;
         this.moon.children[0].material.wireframe = guiParams.wireframe;
         this.meteorites.children.forEach((function (meteorite) {
             meteorite.material.wireframe = guiParams.wireframe
@@ -230,9 +250,19 @@ Game.prototype.createControls = function () {
 Game.prototype.shoot = function () {
     var bullet = new Bullet().create();
 
-    bullet.position.x = this.spaceShip.position.x - 10;
-    bullet.position.y = this.spaceShip.position.y;
-    bullet.position.z = this.spaceShip.position.z;
+    bullet.position.x = this.spaceShip[index].position.x - 10;
+    bullet.position.y = this.spaceShip[index].position.y;
+    bullet.position.z = this.spaceShip[index].position.z;
+
+    this.bullets.add(bullet);
+
+};
+
+Game.prototype.shoot_online = function (index) {
+    var bullet = new Bullet().create();
+    bullet.position.x = this.spaceShip[index].position.x - 10;
+    bullet.position.y = this.spaceShip[index].position.y;
+    bullet.position.z = this.spaceShip[index].position.z;
 
     this.bullets.add(bullet);
 
@@ -240,25 +270,33 @@ Game.prototype.shoot = function () {
 Game.prototype.initEventMoveSpaceShip = function () {
     document.onkeydown = (function (e) {
         var key = e.keyCode ? e.keyCode : e.which;
-
+        var data;
         if (key == 104) { //^
-            this.spaceShip.position.y += 2;
+            this.spaceShip[index].position.y += 2;
+            data = [index,'y+'];
         }
         if (key == 98) { //v
-            this.spaceShip.position.y -= 2;
+            this.spaceShip[index].position.y -= 2;
+            data = [index,'y-'];
         }
         if (key == 102) { //>
-            this.spaceShip.position.x += 2;
+            this.spaceShip[index].position.x += 2;
+            data = [index,'x+'];
         }
         if (key == 100) { //<
-            this.spaceShip.position.x -= 2;
+            this.spaceShip[index].position.x -= 2;
+            data = [index,'x-'];
         }
         if (key == 97) { //<
-            this.spaceShip.position.z += 5;
+            this.spaceShip[index].position.z += 5;
+            data = [index,'z+'];
         }
         if (key == 99) { //<
-            this.spaceShip.position.z -= 5;
+            this.spaceShip[index].position.z -= 5;
+            data = [index,'z-'];
         }
+        this.server.send("ship_move",data);
+        data = [];
     }).bind(this);
 };
 Game.prototype.initEventShoot = function () {
@@ -268,9 +306,12 @@ Game.prototype.initEventShoot = function () {
         // Spacebar
         if (key == 32) {
             this.shoot();
+            this.server.send("ship_shoot",index);
         }
     }).bind(this);
 };
+
+
 Game.prototype.init = function () {
     this.renderer = this.createRender();
     this.scene = new THREE.Scene();
@@ -280,14 +321,13 @@ Game.prototype.init = function () {
     this.sun = this.createSun();
     this.earth = this.createEarth();
     this.moon = this.createMoon();
-    this.spaceShip = this.createSpaceShip();
     this.meteorites = this.createMeteorites(this.maxMeteorietes);
-
+    this.spaceShip[index] = this.createSpaceShip();
     this.scene.add(this.sun);
     this.scene.add(this.moon);
     this.scene.add(this.earth);
     this.scene.add(this.bullets);
-    this.scene.add(this.spaceShip);
+    this.scene.add(this.spaceShip[index]);
     this.scene.add(this.meteorites);
 
     this.initEventMoveSpaceShip();
@@ -314,9 +354,9 @@ Game.prototype.stop = function (msg) {
 Game.prototype.render = function () {
     this.requestAnimationFrameId = requestAnimationFrame(this.render.bind(this));
 
-    this.camera.position.x = this.spaceShip.position.x + 45;
-    this.camera.position.y = this.spaceShip.position.y + 10;
-    this.camera.position.z = this.spaceShip.position.z;
+    this.camera.position.x = this.spaceShip[index].position.x + 45;
+    this.camera.position.y = this.spaceShip[index].position.y + 10;
+    this.camera.position.z = this.spaceShip[index].position.z;
     //this.stats.begin();
     this.renderer.render(this.scene, this.camera);
     //this.stats.end();

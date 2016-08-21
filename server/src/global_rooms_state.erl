@@ -39,6 +39,18 @@ loop(State) ->
     {master_asteroid_position, Data, RoomId} ->
       RoomPID = search_room_pid(RoomId, State#state.rooms),
       RoomPID ! {master_asteroid_position, Data},
+      loop(State);
+    {ship_position, Data, RoomId} ->
+      RoomPID = search_room_pid(RoomId, State#state.rooms),
+      RoomPID ! {ship_position, Data},
+      loop(State);
+    {ship_move, Data, RoomId} ->
+      RoomPID = search_room_pid(RoomId, State#state.rooms),
+      RoomPID ! {ship_move, Data},
+      loop(State);
+    {ship_shoot, Data, RoomId} ->
+      RoomPID = search_room_pid(RoomId, State#state.rooms),
+      RoomPID ! {ship_shoot, Data},
       loop(State)
   end.
 
