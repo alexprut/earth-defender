@@ -164,19 +164,19 @@ Game.prototype.createSpaceShip = function () {
 };
 
 Game.prototype.addNewSpaceShip = function (index) {
-    for(var i = 0; i < index.length; i++){
-        if(typeof this.spaceShip[index[i][0]] == "undefined")
+    for (var i = 0; i < index.length; i++) {
+        if (typeof this.spaceShip[index[i][0]] == "undefined")
             this.spaceShip[index[i][0]] = this.createSpaceShip();
-            this.scene.add(this.spaceShip[index[i][0]]);
-            }
+        this.scene.add(this.spaceShip[index[i][0]]);
+    }
 };
 
 Game.prototype.setPositionSpaceShip = function (position) {
-    for(var index = 0; index < position.length; index++){
+    for (var index = 0; index < position.length; index++) {
         this.spaceShip[position[index][0]].position.x = position[index][1];
         this.spaceShip[position[index][0]].position.y = position[index][2];
         this.spaceShip[position[index][0]].position.z = position[index][3];
-        }
+    }
 };
 
 Game.prototype.createMoon = function () {
@@ -285,29 +285,31 @@ Game.prototype.initEventMoveSpaceShip = function () {
         var data;
         if (key == 90) { //^
             this.spaceShip[index].position.y += 2;
-            data = [index,'y+'];
+            data = [index, 'y+'];
         }
         if (key == 88) { //v
             this.spaceShip[index].position.y -= 2;
-            data = [index,'y-'];
+            data = [index, 'y-'];
         }
         if (key == 83) { //v
             this.spaceShip[index].position.x += 2;
-            data = [index,'x+'];
+            data = [index, 'x+'];
         }
         if (key == 87) { //^
             this.spaceShip[index].position.x -= 2;
-            data = [index,'x-'];
+            data = [index, 'x-'];
         }
         if (key == 65) { //<
             this.spaceShip[index].position.z += 5;
-            data = [index,'z+'];
+            data = [index, 'z+'];
         }
         if (key == 68) { //<
             this.spaceShip[index].position.z -= 5;
-            data = [index,'z-'];
+            data = [index, 'z-'];
         }
-        this.server.send("ship_move",data);
+        if (this.server.websocket) {
+            this.server.send("ship_move", data);
+        }
         data = [];
     }).bind(this);
 };
@@ -318,7 +320,9 @@ Game.prototype.initEventShoot = function () {
         // Spacebar
         if (key == 32) {
             this.shoot();
-            this.server.send("ship_shoot",index);
+            if (this.server.websocket) {
+                this.server.send("ship_shoot", index);
+            }
         }
     }).bind(this);
 };
