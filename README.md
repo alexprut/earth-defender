@@ -100,6 +100,15 @@ fetches all the assets (js, images, css, ...). The WebServer is only responsible
 As last step the client contact one of the servers to join a game room or create one and then play. The servers are written in Erlang language
 and intended to be fault tolerant and distributed.
 
+![CAP Theorem](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/CAP.png)
+
+In a perfect world it would be nice to have both Availability and Consistency at the same time.
+In a real world it's impossible and that is what the CAP Theorem say, you can only have 2 things at once (i.e. CP, AP, AC),
+theoretically an AC solution could be possible, but we all know that there is no network and hardware that do not fail.
+For the above game was opted for an AP (i.e. Availability and Partition tolerance) approach. In a soft real-time game it's more
+important to have an available system than consistent (at least for this game). In case of failure or conflict it is preferred to lose
+consistency (sync/solve somehow later) and gain availability.
+
 ### Use Cases
 Below are listed the most relevant use cases, user interfaces and the
 flow diagrams of the messages exchanged between the client and server.
