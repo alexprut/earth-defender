@@ -97,11 +97,11 @@ var GameDOMHandler = function (gameHandler) {
                         gameHandler.server.send('room_join', getSelectedRoom());
                         gameHandler.stop("Loading ...");
                         gameHandler.start();
-                    }
                         gameHandler.server.send('action_new_player_join');
                         var data = [];
                         data.push(index,gameHandler.spaceShip[index].position.x,gameHandler.spaceShip[index].position.y,gameHandler.spaceShip[index].position.z);
                         gameHandler.server.send("ship_position",data);
+                    }
                 });
 
                 document.getElementById('gameRoom-create').addEventListener('click', function () {

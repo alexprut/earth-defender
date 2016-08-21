@@ -21,12 +21,13 @@ GameClient.prototype.disconnect = function () {
 };
 GameClient.prototype.send = function (event, data) {
     var sendData = JSON.stringify([event, data]);
-    if (this.websocket.readyState === this.websocket.OPEN) {
+    if (this.websocket && (this.websocket.readyState === this.websocket.OPEN)) {
         this.websocket.send(sendData);
         console.log('sending:');
         console.log(sendData);
     } else {
         console.log('WebSocket is not connected: message queued');
+        console.log('Event: ' + event + " Data:" + data);
         this.queue.push({event: event, data: data});
     }
 };
@@ -88,6 +89,4 @@ GameClient.prototype.onMessage = function (event) {
 GameClient.prototype.onError = function (event) {
     console.log('onError');
     console.log(event.data);
-
-    this.send("player_remove");
 };
