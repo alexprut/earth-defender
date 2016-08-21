@@ -3,7 +3,7 @@
 -export([start/1, loop/1]).
 
 % Data in #state.players saved as: {player_id, player_pid}
--record(state, {players = [], id, life = 1000, a_position}).
+-record(state, {players = [], id, life = 1000, a_position, s_position = [[]]}).
 
 start(RoomId) -> spawn(room, loop, [#state{id = RoomId}]).
 
@@ -40,8 +40,32 @@ loop(State) ->
     {master_asteroid_position, Position} ->
       NewState = State#state{a_position = Position},
       broadcast(State#state.players, asteroid_position_set, Position),
-      loop(NewState)
+      loop(NewState);
+    {ship_position, PositionShip} ->
+      PositionList = [PositionShip|State#state.s_position],
+      NewState = State#state{s_position = PositionList},
+      broadcast(State#state.players, ship_position_set, PositionList),
+      loop(NewState);
+    {ship_move, [IdShip,Direction]} ->
+      NewState = State#state{s_position = update_position(State#state.s_position,IdShip,Direction)},
+      broadcast(State#state.players, ship_position_set, State#state.s_position),
+      loop(NewState);
+    {ship_shoot, IdShip} ->
+      broadcast(State#state.players, ship_shoot, IdShip),
+      loop(State)
   end.
+
+update_position([[IdShip,X,Y,Z]|XS],IdShip,Direction)->
+    case binary_to_list(Direction) of
+        "x+" -> [[IdShip,X+2,Y,Z]|XS];
+        "x-" -> [[IdShip,X-2,Y,Z]|XS];
+        "y+" -> [[IdShip,X,Y+2,Z]|XS];
+        "y-" -> [[IdShip,X,Y-2,Z]|XS];
+        "z+" -> [[IdShip,X,Y,Z+5]|XS];
+        "z-" -> [[IdShip,X,Y,Z-5]|XS]
+    end;
+update_position([X|XS],IdShip,Direction) -> lists:append([X],update_position(XS, IdShip, Direction));
+update_position([],_,_) -> [].
 
 player_remove([{PlayerId, PlayerPID} | XS], PlayerId) ->
   PlayerPID ! stop,
