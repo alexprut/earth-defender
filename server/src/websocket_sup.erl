@@ -17,5 +17,14 @@ start_link() ->
 %% supervisor.
 
 init([]) ->
-  Procs = [],
+  Procs = [
+    {
+      global_rooms_state,
+      {global_rooms_state, start_link, []},
+      permanent,
+      infinity,
+      worker,
+      dynamic
+    }
+  ],
   {ok, {{one_for_one, 10, 10}, Procs}}.
