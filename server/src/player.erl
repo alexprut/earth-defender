@@ -1,6 +1,6 @@
 -module(player).
 
--export([start/1, loop/1]).
+-export([start/1, loop/1, terminate/1]).
 
 -record(state, {id, websocket}).
 
@@ -34,7 +34,7 @@ loop(State) ->
       WebSocket ! {ship_shoot, IdShip},
       loop(State);
     stop ->
-      stop()
+      terminate(self())
   end.
 
-stop() -> exit(self(), normal).
+terminate(PID) -> exit(PID, kill).

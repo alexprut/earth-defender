@@ -1,4 +1,5 @@
 -module(ws_handler).
+-include("config.hrl").
 
 -export([init/2]).
 -export([websocket_handle/3]).
@@ -8,7 +9,7 @@
 -record(state, {player_id, room_id}).
 
 init(Req, Opts) ->
-  {cowboy_websocket, Req, #state{}, 120000}.
+  {cowboy_websocket, Req, #state{}, ?WEBSOCKET_TIMEOUT}.
 
 % Receive/External message Handler
 % Client that send messages to the server
@@ -103,12 +104,16 @@ websocket_info({Event, Data}, Req, State) ->
       reply_ok(Req, State)
   end.
 
+% Reason con be: remote, crash or normal
+% In case the process ws_handler crashes the terminate function will be executeds
+terminate({crash, _, _}, _Req, _State) ->
+  io:format("Warning: process 'ws_handler' crashed"),
+  global_rooms_state ! {player_remove, {_State#state.room_id, _State#state.player_id}};
 terminate(_Reason, _Req, _State) ->
   global_rooms_state ! {player_remove, {_State#state.room_id, _State#state.player_id}}.
 
 % Utilities
 reply(Data, Req, State) ->
-  erlang:display("Sending message:"),
-  erlang:display(jiffy:encode(Data)),
+  io:format("Sending message:~n~s", [jiffy:encode(Data)]),
   {reply, {text, jiffy:encode(Data)}, Req, State}.
 reply_ok(Req, State) -> {ok, Req, State}.
