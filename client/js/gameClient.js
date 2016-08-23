@@ -40,7 +40,6 @@ GameClient.prototype.onOpen = function (event) {
 };
 GameClient.prototype.onClose = function (event) {
     console.log('onClose');
-    this.send("player_remove");
 };
 GameClient.prototype.onMessage = function (event) {
     var receivedData = JSON.parse(event.data);

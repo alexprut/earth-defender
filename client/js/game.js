@@ -307,8 +307,11 @@ Game.prototype.initEventMoveSpaceShip = function () {
             this.spaceShip[index].position.z -= 5;
             data = [index, 'z-'];
         }
-        if (this.server.websocket) {
-            this.server.send("ship_move", data);
+
+        if (key == 68 || key == 65 || key == 87 || key == 83 || key == 88 || key == 90 ) {
+            if (this.server.websocket) {
+                this.server.send("ship_move", data);
+            }
         }
         data = [];
     }).bind(this);
