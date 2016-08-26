@@ -1,0 +1,2 @@
+-define(EARTH_LIFE, 1000).
+-define(WEBSOCKET_TIMEOUT, 120000).
