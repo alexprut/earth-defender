@@ -1,9 +1,10 @@
 -module(room).
+-include("config.hrl").
 
--export([start/1, loop/1]).
+-export([start/1, loop/1, terminate/1]).
 
 % Data in #state.players saved as: {player_id, player_pid}
--record(state, {players = [], id, life = 1000, a_position, s_position = [[]]}).
+-record(state, {players = [], id, life = ?EARTH_LIFE, a_position, s_position = [[]]}).
 
 start(RoomId) -> spawn(room, loop, [#state{id = RoomId}]).
 
@@ -84,4 +85,4 @@ broadcast([{_, Player_pid} | XS], Event, Data) ->
   Player_pid ! {Event, Data},
   broadcast(XS, Event, Data).
 
-stop() -> exit(self(), normal).
+terminate(PID) -> exit(PID, kill).

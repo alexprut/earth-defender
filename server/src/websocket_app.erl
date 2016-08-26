@@ -6,9 +6,10 @@
 -export([start/2]).
 -export([stop/1]).
 
+-include("config.hrl").
+
 %% API.
 start(_Type, _Args) ->
-  global_rooms_state:start(),
   Dispatch = cowboy_router:compile([
     {'_', [{"/websocket/", ws_handler, []}]}
   ]),
@@ -19,3 +20,4 @@ start(_Type, _Args) ->
 
 stop(_State) ->
   ok.
+
