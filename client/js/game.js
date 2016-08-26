@@ -286,28 +286,33 @@ Game.prototype.initEventMoveSpaceShip = function () {
         if (key == 90) { //^
             this.spaceShip[index].position.y += 2;
             data = [index,'y+'];
+            this.server.send("ship_move",data);
         }
         if (key == 88) { //v
             this.spaceShip[index].position.y -= 2;
             data = [index,'y-'];
+            this.server.send("ship_move",data);
         }
         if (key == 83) { //v
             this.spaceShip[index].position.x += 2;
             data = [index,'x+'];
+            this.server.send("ship_move",data);
         }
         if (key == 87) { //^
             this.spaceShip[index].position.x -= 2;
             data = [index,'x-'];
+            this.server.send("ship_move",data);
         }
         if (key == 65) { //<
             this.spaceShip[index].position.z += 5;
             data = [index,'z+'];
+            this.server.send("ship_move",data);
         }
         if (key == 68) { //<
             this.spaceShip[index].position.z -= 5;
             data = [index,'z-'];
+            this.server.send("ship_move",data);
         }
-        this.server.send("ship_move",data);
         data = [];
     }).bind(this);
 };

@@ -49,7 +49,7 @@ websocket_handle({text, Msg}, Req, State) ->
     "players_get" ->
       {reply, {text, State}, Req, State};
     "action_earth_collision" ->
-      global_rooms_state ! {action_earth_collision, State#state.room_id},
+      global_rooms_state ! {action_earth_collision, State#state.room_id, State#state.player_id},
       reply_ok(Req, State);
     "action_new_player_join" ->
       global_rooms_state ! {action_new_player_join, State#state.room_id},
