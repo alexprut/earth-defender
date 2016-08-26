@@ -28,9 +28,9 @@ loop(State) ->
       RoomPID = search_room_pid(RoomId, State#state.rooms),
       RoomPID ! {player_add, Player},
       loop(State);
-    {action_earth_collision, RoomId} ->
+    {action_earth_collision, RoomId, PlayerId} ->
       RoomPID = search_room_pid(RoomId, State#state.rooms),
-      RoomPID ! {action_earth_collision},
+      RoomPID ! {action_earth_collision, PlayerId},
       loop(State);
     {action_new_player_join, RoomId} ->
       RoomPID = search_room_pid(RoomId, State#state.rooms),

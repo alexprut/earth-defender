@@ -25,8 +25,14 @@ loop(State) ->
       PlayerPID ! {game_life, NewState#state.life},
       broadcast(NewState#state.players, room_players_number, length(NewState#state.players)),
       loop(NewState);
-    {action_earth_collision} ->
+    {action_earth_collision, Pid} ->
+%      X = lists:last(State#state.players),
+%      [{Pid,_}|_] = X,
       NewLife = State#state.life - 200,
+%      if
+%        Pid == X -> NewLife = State#state.life - 200;
+%        NewLife -> NewLife = State#state.life
+%      end,
       if
         NewLife >= 0 -> NewLife = NewLife;
         NewLife -> NewLife = 0
