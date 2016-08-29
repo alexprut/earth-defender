@@ -15,8 +15,7 @@ init(Req, Opts) ->
 % Client that send messages to the server
 websocket_handle({text, Msg}, Req, State) ->
   % The receiving message Msg is of type <<"[\"event\",data]">>
-  erlang:display("Receiving message:"),
-  erlang:display(jiffy:decode(Msg)),
+  io:format("Receiving message:~n~p~n", [jiffy:decode(Msg)]),
   [Event, Data] = jiffy:decode(Msg),
   case binary_to_list(Event) of
     "rooms_list" ->
@@ -32,8 +31,7 @@ websocket_handle({text, Msg}, Req, State) ->
       reply_ok(Req, NewState);
     "room_add" ->
       RoomId = uuid:generate(),
-      erlang:display("Room id:"),
-      erlang:display(RoomId),
+      io:format("Room id:~n~p~n", [RoomId]),
       % Create new Room
       Room = room:start(RoomId),
       global_rooms_state ! {room_add, {RoomId, Room}},
@@ -71,8 +69,7 @@ websocket_handle({text, Msg}, Req, State) ->
       global_rooms_state ! {ship_shoot, Data, State#state.room_id},
       reply_ok(Req, State);
     Unknown ->
-      erlang:display("Warning: websocket_handle can not handle event:"),
-      erlang:display(Unknown),
+      io:format("Warning: websocket_handle can not handle event:~n~p~n", [Unknown]),
       reply_ok(Req, State)
   end;
 websocket_handle(_Data, Req, State) ->
@@ -99,8 +96,7 @@ websocket_info({Event, Data}, Req, State) ->
     ship_shoot ->
       reply([<<"ship_shoot">>, Data], Req, State);
     Unknown ->
-      erlang:display("Warning: websocket_info can not handle event:"),
-      erlang:display(Unknown),
+      io:format("Warning: websocket_info can not handle event:~n~p~n", [Unknown]),
       reply_ok(Req, State)
   end.
 
@@ -114,6 +110,6 @@ terminate(_Reason, _Req, _State) ->
 
 % Utilities
 reply(Data, Req, State) ->
-  io:format("Sending message:~n~s", [jiffy:encode(Data)]),
+  io:format("Sending message:~n~s~n", [jiffy:encode(Data)]),
   {reply, {text, jiffy:encode(Data)}, Req, State}.
 reply_ok(Req, State) -> {ok, Req, State}.

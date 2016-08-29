@@ -162,7 +162,25 @@ Game.prototype.createSpaceShip = function () {
 
     return spaceShip[index];
 };
-
+Game.prototype.normalizeNumbers = function (number, factor) {
+    factor = factor || 10000;
+    var tmp = number * factor;
+    return Math.ceil(tmp) / factor;
+};
+Game.prototype.getSpaceShipPosition = function (index) {
+    return new THREE.Vector3(
+        this.normalizeNumbers(this.spaceShip[index].position.x),
+        this.normalizeNumbers(this.spaceShip[index].position.y),
+        this.normalizeNumbers(this.spaceShip[index].position.z)
+    );
+};
+Game.prototype.getMeteoritePosition = function (index) {
+    return new THREE.Vector3(
+        this.normalizeNumbers(this.meteorites.children[index].position.x),
+        this.normalizeNumbers(this.meteorites.children[index].position.y),
+        this.normalizeNumbers(this.meteorites.children[index].position.z)
+    );
+};
 Game.prototype.addNewSpaceShip = function (index) {
     for (var i = 0; i < index.length; i++) {
         if (typeof this.spaceShip[index[i][0]] == "undefined")
@@ -283,6 +301,10 @@ Game.prototype.initEventMoveSpaceShip = function () {
     document.onkeydown = (function (e) {
         var key = e.keyCode ? e.keyCode : e.which;
         var data;
+        if (key == 90) { //^
+            this.spaceShip[index].position.y += 2;
+            data = [index, 'y+'];
+        }
         if (key == 88) { //v
             this.spaceShip[index].position.y -= 2;
             data = [index, 'y-'];
@@ -304,7 +326,7 @@ Game.prototype.initEventMoveSpaceShip = function () {
             data = [index, 'z-'];
         }
 
-        if (key == 68 || key == 65 || key == 87 || key == 83 || key == 88 || key == 90 ) {
+        if (key == 68 || key == 65 || key == 87 || key == 83 || key == 88 || key == 90) {
             if (this.server.websocket) {
                 this.server.send("ship_move", data);
             }
