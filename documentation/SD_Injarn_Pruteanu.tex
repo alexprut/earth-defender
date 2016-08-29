@@ -28,6 +28,8 @@
 
 \setlength\parindent{0pt} % Removes all indentation from paragraphs - comment this line for an assignment with lots of text
 
+\graphicspath{{img/}}
+
 %----------------------------------------------------------------------------------------
 %	TITLE SECTION
 %----------------------------------------------------------------------------------------
@@ -76,7 +78,7 @@ In figura \ref{GenArc} è possibile osservare lo schema dell'architettura genera
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{../GeneralArchitecture}
+\includegraphics[width=\textwidth]{GeneralArchitecture}
 \caption{Architettura generale del sistema}
 \label{GenArc}
 \end{figure}
@@ -93,7 +95,7 @@ Per entrare maggiormente ne dettaglio, in figura \ref{ClientArc} è possibile os
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{../ClientArchitecture}
+\includegraphics[width=\textwidth]{ClientArchitecture}
 \caption{Architettura del client}
 \label{ClientArc}
 \end{figure}
@@ -103,7 +105,7 @@ In figura \ref{ServerArc} possiamo invece osservare l'architettura che è stata 
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{../ServerArchitecture}
+\includegraphics[width=\textwidth]{ServerArchitecture}
 \caption{Architettura generale del server}
 \label{ServerArc}
 \end{figure}
@@ -112,6 +114,8 @@ Il server è interamente scritto in Erlang e la libreria principale utilizzata, 
 \subsubsection{websocket\_app}
 Il modulo \texttt{websocket\_app} è responsabile della configurazione e dell'avvio del processo server (nel nostro caso un server Cowoby). Il modulo risponde con la medesima configurazione ad ogni richiesta.
 Di seguito è possibile osservare la parte di codice dove viene indicato di avviare un server in ascolto sulla porta \texttt{8888} con protocollo \texttt{http} e inoltrare le richieste al modulo \texttt{ws\_handler}.
+
+\lstset{language=erlang}
 \begin{lstlisting}
 start(_Type, _Args) ->
   Dispatch = cowboy_router:compile([
@@ -122,6 +126,7 @@ start(_Type, _Args) ->
   }),
   websocket_sup:start_link().
 \end{lstlisting}
+
 \subsubsection{websocket\_sup}
 \texttt{websocket\_sup} funge da modulo supervisore (se ad esempio si blocca Cowboy, si occupa di riavviare il processo).
 \subsubsection{ws\_handler}
@@ -191,21 +196,21 @@ La funzione \texttt{loop/1} rimane in ascolto di eventuali messaggi ed in genera
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{../CAP}
+\includegraphics[width=\textwidth]{CAP}
 \caption{teorema di Brewer}
 \label{CAP}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{../MultiplayerCreateRoomUC}
+\includegraphics[width=\textwidth]{MultiplayerCreateRoomUC}
 \caption{Create Room in modalità Multiplayer}
 \label{CreateRoomUC}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{../MultiplayerCreateRoom}
+\includegraphics[width=\textwidth]{MultiplayerCreateRoom}
 \caption{Create Room in modalità Multiplayer}
 \label{CreateRoom}
 \end{figure}
@@ -213,7 +218,7 @@ La funzione \texttt{loop/1} rimane in ascolto di eventuali messaggi ed in genera
 \section{Documentazione tecnica}
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{../MultiplayerJoinRoom}
+\includegraphics[width=\textwidth]{MultiplayerJoinRoom}
 \caption{Join Room in modalità Multiplayer}
 \label{JoinRoom}
 \end{figure}
@@ -221,7 +226,7 @@ La funzione \texttt{loop/1} rimane in ascolto di eventuali messaggi ed in genera
 \section{Documentazione tecnica}
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{../MultiplayerJoinRoomUC}
+\includegraphics[width=\textwidth]{MultiplayerJoinRoomUC}
 \caption{Join Room in modalità Multiplayer}
 \label{JoinRoomUC}
 \end{figure}
