@@ -11,7 +11,7 @@
 %% API.
 start(_Type, _Args) ->
   Dispatch = cowboy_router:compile([
-    {'_', [{"/websocket/", ws_handler, []}]}
+    {'_', [{"/websocket/", websocket_handler, []}]}
   ]),
   {ok, _} = cowboy:start_clear(http, 100, [{port, 8888}], #{
     env => #{dispatch => Dispatch}
