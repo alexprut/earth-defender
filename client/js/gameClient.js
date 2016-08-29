@@ -64,18 +64,18 @@ GameClient.prototype.onMessage = function (event) {
             this.game.setLife(data);
             break;
         case "asteroid_position":
-            var data = [];
-            var tmp = this.game.meteorites.children;
-            for(var i = 0; i < this.game.meteorites.children.length; i++){
-                data.push([tmp[i].position.x,tmp[i].position.y,tmp[i].position.z]);
-               }
-            this.send("master_asteroid_position",data);
+            var tmpData = [];
+            for (var i = 0, length = this.game.meteorites.children.length; i < length; i++) {
+                var position = this.game.getMeteoritePosition(i);
+                tmpData.push([position.x, position.y, position.z]);
+            }
+            this.send("master_asteroid_position", tmpData);
             break;
         case "asteroid_position_set":
             this.game.setAsteroidPosition(data);
             break;
         case "ship_position_set":
-            if(data.length>1)
+            if (data.length > 1)
                 this.game.addNewSpaceShip(data);
             this.game.setPositionSpaceShip(data);
             break;
