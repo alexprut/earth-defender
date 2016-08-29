@@ -28,4 +28,8 @@ documentation/*.aux
 documentation/*.pdf
 documentation/*.log
 documentation/*.synctex.gz
+documentation/*.lof
+documentation/*.out
+documentation/*.toc
+
 
