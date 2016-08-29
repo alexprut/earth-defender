@@ -3,6 +3,8 @@ var GameClient = function (config) {
     this.game = config.game;
     this.websocket = null;
     this.queue = [];
+    this.heartBeatInterval = 60000; // 1 minute
+    this.heartBeatId = null;
 };
 GameClient.prototype.constructor = GameClient;
 GameClient.prototype.connect = function () {
@@ -19,9 +21,25 @@ GameClient.prototype.disconnect = function () {
 
     this.websocket.close();
 };
+GameClient.prototype.stopHeartBeat = function () {
+    clearTimeout(this.heartBeatId);
+};
+GameClient.prototype.resetHeartBeat = function () {
+    this.stopHeartBeat();
+
+    this.heartBeatId = setTimeout((function () {
+        if (this.isConnected()) {
+            this.send("ping", null);
+            this.resetHeartBeat();
+        }
+    }).bind(this), this.heartBeatInterval);
+};
+GameClient.prototype.isConnected = function () {
+    return (this.websocket && (this.websocket.readyState === this.websocket.OPEN)) ? true : false;
+};
 GameClient.prototype.send = function (event, data) {
     var sendData = JSON.stringify([event, data]);
-    if (this.websocket && (this.websocket.readyState === this.websocket.OPEN)) {
+    if (this.isConnected()) {
         this.websocket.send(sendData);
         console.log('sending:');
         console.log(sendData);
@@ -37,6 +55,8 @@ GameClient.prototype.onOpen = function (event) {
     while (sendData = this.queue.shift()) {
         this.send(sendData.event, sendData.data);
     }
+
+    this.resetHeartBeat();
 };
 GameClient.prototype.onClose = function (event) {
     console.log('onClose');
@@ -81,6 +101,9 @@ GameClient.prototype.onMessage = function (event) {
             break;
         case "ship_shoot":
             this.game.shoot_online(data);
+            break;
+        case "pong":
+            break;
         default:
             console.log("Warning: onMessage can not handle action " + "\"" + action + "\"");
     }

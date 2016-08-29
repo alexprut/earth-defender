@@ -68,6 +68,8 @@ websocket_handle({text, Msg}, Req, State) ->
     "ship_shoot" ->
       global_rooms_state ! {ship_shoot, Data, State#state.room_id},
       reply_ok(Req, State);
+    "ping" ->
+      reply([<<"pong">>], Req, State);
     Unknown ->
       io:format("Warning: websocket_handle can not handle event:~n~p~n", [Unknown]),
       reply_ok(Req, State)
