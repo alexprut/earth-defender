@@ -1,4 +1,4 @@
--module(ws_handler).
+-module(websocket_handler).
 -include("config.hrl").
 
 -export([init/2]).
@@ -23,24 +23,24 @@ websocket_handle({text, Msg}, Req, State) ->
       reply_ok(Req, State);
     "room_join" ->
       Player = player:start(self()),
-      PlayerId = uuid:generate(),
-      Player ! {player_id, PlayerId},
-      RoomId = Data,
-      NewState = State#state{player_id = PlayerId, room_id = RoomId},
-      global_rooms_state ! {room_player_add, RoomId = RoomId, {PlayerId, Player}},
-      reply_ok(Req, NewState);
+      Player_id = uuid:generate(),
+      Player ! {player_id, Player_id},
+      Room_id = Data,
+      New_state = State#state{player_id = Player_id, room_id = Room_id},
+      global_rooms_state ! {room_player_add, Room_id = Room_id, {Player_id, Player}},
+      reply_ok(Req, New_state);
     "room_add" ->
-      RoomId = uuid:generate(),
-      io:format("Room id:~n~p~n", [RoomId]),
+      Room_id = uuid:generate(),
+      io:format("Room id:~n~p~n", [Room_id]),
       % Create new Room
-      Room = room:start(RoomId),
-      global_rooms_state ! {room_add, {RoomId, Room}},
+      Room = room:start(Room_id),
+      global_rooms_state ! {room_add, {Room_id, Room}},
       Player = player:start(self()),
-      PlayerId = uuid:generate(),
-      Player ! {player_id, PlayerId},
-      Room ! {player_add, {PlayerId, Player}},
-      NewState = State#state{player_id = PlayerId, room_id = RoomId},
-      reply([<<"room_id">>, RoomId], Req, NewState);
+      Player_id = uuid:generate(),
+      Player ! {player_id, Player_id},
+      Room ! {player_add, {Player_id, Player}},
+      New_state = State#state{player_id = Player_id, room_id = Room_id},
+      reply([<<"room_id">>, Room_id], Req, New_state);
     "player_add" ->
       reply_ok(Req, State);
     "player_remove" ->

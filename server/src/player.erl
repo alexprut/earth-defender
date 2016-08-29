@@ -4,34 +4,34 @@
 
 -record(state, {id, websocket}).
 
-start(WebSocket) ->
-  spawn(player, loop, [#state{websocket = WebSocket}]).
+start(Websocket) ->
+  spawn(player, loop, [#state{websocket = Websocket}]).
 
 loop(State) ->
-  WebSocket = State#state.websocket,
+  Websocket = State#state.websocket,
   receive
-    {player_id, PlayerId} ->
-      WebSocket ! {player_id, PlayerId},
-      loop(State#state{id = PlayerId});
-    {websocket, WebSocket} ->
-      loop(State#state{websocket = WebSocket});
+    {player_id, Player_id} ->
+      Websocket ! {player_id, Player_id},
+      loop(State#state{id = Player_id});
+    {websocket, Websocket} ->
+      loop(State#state{websocket = Websocket});
     {room_players_number, Players_number} ->
-      WebSocket ! {room_players_number, Players_number},
+      Websocket ! {room_players_number, Players_number},
       loop(State);
     {game_life, Life} ->
-      WebSocket ! {game_life, Life},
+      Websocket ! {game_life, Life},
       loop(State);
     {asteroid_position, _} ->
-      WebSocket ! {asteroid_position, null},
+      Websocket ! {asteroid_position, null},
       loop(State);
     {asteroid_position_set, Position} ->
-      WebSocket ! {asteroid_position_set, Position},
+      Websocket ! {asteroid_position_set, Position},
       loop(State);
-    {ship_position_set, PositionShip} ->
-      WebSocket ! {ship_position_set, PositionShip},
+    {ship_position_set, Ship_position} ->
+      Websocket ! {ship_position_set, Ship_position},
       loop(State);
-    {ship_shoot, IdShip} ->
-      WebSocket ! {ship_shoot, IdShip},
+    {ship_shoot, Ship_id} ->
+      Websocket ! {ship_shoot, Ship_id},
       loop(State);
     stop ->
       terminate(self())

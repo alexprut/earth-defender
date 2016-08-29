@@ -1,5 +1,5 @@
-PROJECT = websocket
-PROJECT_DESCRIPTION = Cowboy Websocket earth_def
+PROJECT = earth_defender
+PROJECT_DESCRIPTION = Earth Defender game server
 PROJECT_VERSION = 1
 
 ERLC_OPTS = +nowarn_export_vars
