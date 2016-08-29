@@ -40,7 +40,7 @@
 \normalfont \normalsize 
 \textsc{Sistemi Distribuiti, Università degli studi di Udine} \\ [25pt] % Your university, school and/or department name(s)
 \horrule{0.5pt} \\[0.4cm] % Thin top horizontal rule
-\huge Distributed Real Time Game % The assignment title
+\huge Distribute a soft real-time 3d multiplayer game% The assignment title
 \horrule{2pt} \\[0.5cm] % Thick bottom horizontal rule
 }
 
@@ -57,31 +57,96 @@
 \newpage
 \textbf{\abstractname}
 
-Il seguente progetto consiste nell'implementazione di un gioco in prima persona, real time e distribuito. Lo scopo principale è stato quello di realizzare l'applicazione tenendo conto soprattutto di aspetti che riguardano, in particolare, la comunicazione.
+Il seguente progetto consiste nell'implementazione di un gioco in prima persona, real-time e distribuito. Lo scopo principale è di realizzare l'applicazione tenendo conto soprattutto di aspetti che riguardano, in particolare, la comunicazione (cioè affidabilità, consistenza e disponibilità del servizio).
+
+
+
 \section{Analisi dei requisiti}
+
+
 \subsection{Scopo}
 Permettere a uno o più utenti di poter comandare una nave spaziale al fine di difendere il pianeta terra dalla minaccia degli asteroidi. Nel secondo caso, ogni utente deve vedere singolarmente le azioni degli altri utenti e lo stato globale del sistema deve essere uguale per tutti.
+
+
 \subsection{Requisiti}
 \begin{enumerate}
 \item Il sistema deve dare la massima trasparenza all'utente per quanto riguarda la comunicazione tra i vari moduli. L'utente deve poter avviare l'applicazione (il client) e poter iniziare a giocare la partita.
-\item 
-\item
-\item
-\item
-\item
 \end{enumerate}
+
+
+\subsection{Casi d'uso}
+Sotto in figura ? sono illustrati i casi d'uso più rilevanti, le interface utente e il
+diagramma di flusso dei messaggi che vengono scambiato fra il client e il server.
+
+
+\subsubsection{Multiplayer, creazione di una nuova room}
+
+Sotto sono in figura ? viene illustrato l'interfaccia utente:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{MultiplayerCreateRoomUC}
+\caption{Create Room in modalità Multiplayer}
+\label{CreateRoomUC}
+\end{figure}
+
+Sotto in figura ? si possono vedere i messaggi scambiati fra il client e il server:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{MultiplayerCreateRoom}
+\caption{Create Room in modalità Multiplayer}
+\label{CreateRoom}
+\end{figure}
+
+
+\subsubsection{Multiplayer, entrata in una room}
+Sotto sono in figura ? viene illustrato l'interfaccia utente:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{MultiplayerJoinRoomUC}
+\caption{Create Room in modalità Multiplayer}
+\label{CreateRoomUC}
+\end{figure}
+
+Sotto in figura ? si possono vedere i messaggi scambiati fra il client e il server:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{MultiplayerJoinRoom}
+\caption{Create Room in modalità Multiplayer}
+\label{CreateRoom}
+\end{figure}
 
 \section{Architettura e Design}
 \textcolor{red}{DA INTEGRARE CON QUANTO GIA' PRESENTE SU GIT}
 
 In figura \ref{GenArc} è possibile osservare lo schema dell'architettura generale del sistema implementato. Le componenti principali che andremo poi a descrivere sono rappresentate dal client e dal server. Come si osserva, tra questi due vi è un canale full-duplex rappresentato, nel nostro caso, da una connessione TCP (protocollo WebSocket). E' possibile inoltre osservare che i client non comunicano tra di loro in maniera diretta ma attraverso i server, i quali invece comunicano tra loro al fine di replicare le informazioni (i vari stati di gioco), distribuire il carico di lavoro (permettendo quindi una maggiore scalabilità) e garantire una certa disponibilità.
 
-\begin{figure}
+Per permettere la modalità di gioco multiplayer viene utilizzato il protocollo WebSocket, questo perchè il gioco viene eseguito all'interno del browser, il protocollo WebSocket funziona sopra HTTP con communicazione assincorna che posono avvenire concorrente. Siccome il browser non può ricevere una connessione, ma solo inizializzarla, connessione fra più client (p2p) non è possibile (attualmente un nuovo protocollo WebRTC si sta diffondendo per appunto permettere architetture di tipo p2p, purtroppo è una tecnologia ancora troppo giovane).
+
+
+\begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{GeneralArchitecture}
 \caption{Architettura generale del sistema}
 \label{GenArc}
 \end{figure}
+
+In figura \ref{GenArc} i client non sono altri che dei browser con supporto per WebGL e WebSocket. All'inizio un client (browser) esegue una richiesta al DNS per ricevere l0indirizzo del WebServer, il DNS è anche responsabile del load balancing. Una volta ricevuta la risposta dal DNS con l'indirizzo di uno dei WebServer il client fa una richiesta e riceve tutti gli asset del gioco (js, imagini, css, ...). Il WebServer e solo responsabile per fornire gli asset del gioco, ne di più ne di meno. Infine il client si connete ad uno dei server del gioco (Erlang) e decide di creare una nuova stanza o entrare in una esistente. I server sono scritti nel linguaggio Erlang e con lo scopo primario di essere fault tolerant e distribuiti.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{CAP}
+\caption{teorema di Brewer}
+\label{CAP}
+\end{figure}
+
+In un mondo ideale sarebbe molto bello avere sia Availability che Consistency allo stesso tempo.
+In un mondo reale purtroppo cio è impossibile, ed è questo che afferma il teorema di Brewer (CAP Theorem), puoi avere solo 2 cose alla volta (che sono: CP, AP oppure AC), teoriticamente parlando una soluzione AC potrebbe essere possibile, ma purtroppo noi tutti sappiamo che non esiste hardware e reti al mondo che non falliscono mai.
+Per il gioco e sistema in analisi sis è optato per un'architettura AP (cioè Availability e Partition tolerance). In un gioco soft real-time è molto più importante un sistema disponibile che consistente (almeno cosi è per questo gioco). In caso di fallimenti è preferibile perdere consistenza (risincronizzare e risolvere conflitti più avanti) e guadagnare disponibilità continua del servizio.
+
 
 \subsection{Cowboy 2.0}
 Come server HTTP è stato deciso di utilizzare la libreria \href{https://github.com/ninenines/cowboy}{Cowboy} interamente scritta in Erlang poiché fornisce un ottimo supporto per le WebSocket (tutte le versioni sia standard che non definitive), modello su cui è basato il progetto.
@@ -93,7 +158,7 @@ Per entrare maggiormente ne dettaglio, in figura \ref{ClientArc} è possibile os
 
 [...]
 
-\begin{figure}
+\begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{ClientArchitecture}
 \caption{Architettura del client}
@@ -103,7 +168,7 @@ Per entrare maggiormente ne dettaglio, in figura \ref{ClientArc} è possibile os
 \subsection{Architettura server}
 In figura \ref{ServerArc} possiamo invece osservare l'architettura che è stata implementata per il server.
 
-\begin{figure}
+\begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{ServerArchitecture}
 \caption{Architettura generale del server}
@@ -194,29 +259,8 @@ La funzione \texttt{loop/1} rimane in ascolto di eventuali messaggi ed in genera
 \end{itemize}
 
 
-\begin{figure}
-\centering
-\includegraphics[width=\textwidth]{CAP}
-\caption{teorema di Brewer}
-\label{CAP}
-\end{figure}
-
-\begin{figure}
-\centering
-\includegraphics[width=\textwidth]{MultiplayerCreateRoomUC}
-\caption{Create Room in modalità Multiplayer}
-\label{CreateRoomUC}
-\end{figure}
-
-\begin{figure}
-\centering
-\includegraphics[width=\textwidth]{MultiplayerCreateRoom}
-\caption{Create Room in modalità Multiplayer}
-\label{CreateRoom}
-\end{figure}
-
 \section{Documentazione tecnica}
-\begin{figure}
+\begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{MultiplayerJoinRoom}
 \caption{Join Room in modalità Multiplayer}
@@ -224,7 +268,7 @@ La funzione \texttt{loop/1} rimane in ascolto di eventuali messaggi ed in genera
 \end{figure}
 
 \section{Documentazione tecnica}
-\begin{figure}
+\begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{MultiplayerJoinRoomUC}
 \caption{Join Room in modalità Multiplayer}
