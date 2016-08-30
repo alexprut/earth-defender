@@ -328,7 +328,7 @@ Game.prototype.initEventMoveSpaceShip = function () {
 
         if (key == 68 || key == 65 || key == 87 || key == 83 || key == 88 || key == 90) {
             if (this.server.websocket) {
-                this.server.send("ship_move", data);
+                this.server.send("action_ship_move", data);
             }
         }
         data = [];
@@ -342,7 +342,7 @@ Game.prototype.initEventShoot = function () {
         if (key == 32) {
             this.shoot();
             if (this.server.websocket) {
-                this.server.send("ship_shoot", index);
+                this.server.send("action_ship_shoot", index);
             }
         }
     }).bind(this);

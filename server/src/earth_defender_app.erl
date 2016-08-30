@@ -1,5 +1,5 @@
 %% @private
--module(websocket_app).
+-module(earth_defender_app).
 -behaviour(application).
 
 %% API.
@@ -16,8 +16,7 @@ start(_Type, _Args) ->
   {ok, _} = cowboy:start_clear(http, 100, [{port, 8888}], #{
     env => #{dispatch => Dispatch}
   }),
-  websocket_sup:start_link().
+  earth_defender_sup:start_link().
 
 stop(_State) ->
   ok.
-

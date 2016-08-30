@@ -97,10 +97,9 @@ var GameDOMHandler = function (gameHandler) {
                         gameHandler.server.send('room_join', getSelectedRoom());
                         gameHandler.stop("Loading ...");
                         gameHandler.start();
-                        gameHandler.server.send('action_new_player_join');
 
                         var position = gameHandler.getSpaceShipPosition(index);
-                        gameHandler.server.send("ship_position", [
+                        gameHandler.server.send("game_ship_position", [
                             index,
                             position.x,
                             position.y,
@@ -116,7 +115,7 @@ var GameDOMHandler = function (gameHandler) {
                     gameHandler.start();
 
                     var position = gameHandler.getSpaceShipPosition(index);
-                    gameHandler.server.send("ship_position", [
+                    gameHandler.server.send("game_ship_position", [
                         index,
                         position.x,
                         position.y,

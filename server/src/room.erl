@@ -26,12 +26,12 @@ loop(State) ->
       Player_pid ! {game_life, New_State#state.life},
       broadcast(New_State#state.players, room_players_number, length(New_State#state.players)),
       loop(New_State);
-    {action_earth_collision, Pid} ->
+    {action_earth_collision, _Pid} ->
 %      X = lists:last(State#state.players),
 %      [{Pid,_}|_] = X,
-      New_life = State#state.life - 200,
+      New_life = State#state.life - ?EARTH_LIFE_DECREASE,
 %      if
-%        Pid == X -> New_life = State#state.life - 200;
+%        Pid == X -> New_life = State#state.life - ?EARTH_LIFE_DECREASE;
 %        New_life -> New_life = State#state.life
 %      end,
       if
@@ -44,7 +44,7 @@ loop(State) ->
     {action_new_player_join} ->
       broadcast([lists:last(State#state.players)], asteroid_position, []),
       loop(State);
-    {master_asteroid_position, Position} ->
+    {game_master_asteroids_position, Position} ->
       New_State = State#state{asteroids_position = Position},
       broadcast(State#state.players, asteroid_position_set, Position),
       loop(New_State);
@@ -64,12 +64,12 @@ loop(State) ->
 
 update_position([[Ship_id, X, Y, Z] | XS], Ship_id, Direction) ->
   case binary_to_list(Direction) of
-    "x+" -> [[Ship_id, X + 2, Y, Z] | XS];
-    "x-" -> [[Ship_id, X - 2, Y, Z] | XS];
-    "y+" -> [[Ship_id, X, Y + 2, Z] | XS];
-    "y-" -> [[Ship_id, X, Y - 2, Z] | XS];
-    "z+" -> [[Ship_id, X, Y, Z + 5] | XS];
-    "z-" -> [[Ship_id, X, Y, Z - 5] | XS]
+    "x+" -> [[Ship_id, X + ?SHIP_MOVE_FACTOR_X, Y, Z] | XS];
+    "x-" -> [[Ship_id, X - ?SHIP_MOVE_FACTOR_X, Y, Z] | XS];
+    "y+" -> [[Ship_id, X, Y + ?SHIP_MOVE_FACTOR_Y, Z] | XS];
+    "y-" -> [[Ship_id, X, Y - ?SHIP_MOVE_FACTOR_Y, Z] | XS];
+    "z+" -> [[Ship_id, X, Y, Z + ?SHIP_MOVE_FACTOR_Z] | XS];
+    "z-" -> [[Ship_id, X, Y, Z - ?SHIP_MOVE_FACTOR_Z] | XS]
   end;
 update_position([X | XS], Ship_id, Direction) -> lists:append([X], update_position(XS, Ship_id, Direction));
 update_position([], _, _) -> [].

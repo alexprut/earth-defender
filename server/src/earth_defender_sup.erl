@@ -1,5 +1,5 @@
 %% @private
--module(websocket_sup).
+-module(earth_defender_sup).
 -behaviour(supervisor).
 
 %% API.

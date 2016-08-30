@@ -89,7 +89,7 @@ GameClient.prototype.onMessage = function (event) {
                 var position = this.game.getMeteoritePosition(i);
                 tmpData.push([position.x, position.y, position.z]);
             }
-            this.send("master_asteroid_position", tmpData);
+            this.send("game_master_asteroids_position", tmpData);
             break;
         case "asteroid_position_set":
             this.game.setAsteroidPosition(data);

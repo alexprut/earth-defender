@@ -1,2 +1,6 @@
 -define(EARTH_LIFE, 1000).
+-define(EARTH_LIFE_DECREASE, 200).
+-define(SHIP_MOVE_FACTOR_X, 2).
+-define(SHIP_MOVE_FACTOR_Y, 2).
+-define(SHIP_MOVE_FACTOR_Z, 5).
 -define(WEBSOCKET_TIMEOUT, 120000).
