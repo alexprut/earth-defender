@@ -40,9 +40,9 @@ handle_info(Info, State) ->
       Room_pid = search_room_pid(Room_id, State#state.rooms),
       Room_pid ! {action_new_player_join},
       {noreply, State};
-    {master_asteroid_position, Data, Room_id} ->
+    {game_master_asteroids_position, Data, Room_id} ->
       Room_pid = search_room_pid(Room_id, State#state.rooms),
-      Room_pid ! {master_asteroid_position, Data},
+      Room_pid ! {game_master_asteroids_position, Data},
       {noreply, State};
     {ship_position, Data, Room_id} ->
       Room_pid = search_room_pid(Room_id, State#state.rooms),

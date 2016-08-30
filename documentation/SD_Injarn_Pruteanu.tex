@@ -147,6 +147,27 @@ In un mondo ideale sarebbe molto bello avere sia Availability che Consistency al
 In un mondo reale purtroppo cio è impossibile, ed è questo che afferma il teorema di Brewer (CAP Theorem), puoi avere solo 2 cose alla volta (che sono: CP, AP oppure AC), teoriticamente parlando una soluzione AC potrebbe essere possibile, ma purtroppo noi tutti sappiamo che non esiste hardware e reti al mondo che non falliscono mai.
 Per il gioco e sistema in analisi sis è optato per un'architettura AP (cioè Availability e Partition tolerance). In un gioco soft real-time è molto più importante un sistema disponibile che consistente (almeno cosi è per questo gioco). In caso di fallimenti è preferibile perdere consistenza (risincronizzare e risolvere conflitti più avanti) e guadagnare disponibilità continua del servizio.
 
+Di seguito vengono elencati i messaggi scambiati fra il client e il server. Per la rappresentazione esterna dei dati viene utilizzato il formato JSON. Lo stesso messaggio ricevuto dal client o dal server può avere funzionalità diverse, ad esempio inizialmente il client manda un messaggio room\_list che server a chiedere al server la lista delle room disponibili, di seguito il server risponde sempre con un messaggio room\_list accompagnato dai dati. Come si può osservare il messaggio è lo stesso ma ha semantica diversa se ricevuto dal client oppure dal server, il tutto e per evitare messaggi duplicati, come add esempio: room\_list\_get, room\_list\_set, ....
+
+Sotto sono elencati i messaggi mandati dal client al server:
+\begin{itemize}
+\item rooms\_list \textit{(richiesta per la lista delle room disponibili)}
+\item room\_join \textit{(richiesta per entrare in una room)}
+\item room\_add (richiesta per creare una nuova room)
+\item action\_earth\_collision (segnalare che c'è stata una collisione con un'asteroide)
+\item ship\_position (richiesta della posizione della navicella degli altri giocatori)
+\item game\_master\_asteroids\_position (richiesta per la posizione degli asteroidi prima di entrare nel gioco, da un client master)
+\item game\_ship\_position \textit{(richiesta per la posizione delle navicelle nel gioco)}
+\item action\_ship\_move \textit{(segnalare al server e altri client che la navicella si sta spostando)}
+\item action\_ship\_shot \textit{(segnalare al server e altri client che la navicella ha sparato)}
+\item ping \textit{(messaggio di heartbeat, per dire al server che si è ancora in ascolto e di non chiudere la connessione con il client)}
+\end{itemize}
+
+
+Sotto sono elencati i messaggi mandati dal server al client:
+\begin{itemize}
+\item room\_list (restituisce un elenco delle room disponibili)
+\end{itemize}
 
 \subsection{Cowboy 2.0}
 Come server HTTP è stato deciso di utilizzare la libreria \href{https://github.com/ninenines/cowboy}{Cowboy} interamente scritta in Erlang poiché fornisce un ottimo supporto per le WebSocket (tutte le versioni sia standard che non definitive), modello su cui è basato il progetto.
