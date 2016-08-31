@@ -2,6 +2,7 @@
 -behavior(gen_server).
 
 -export([handle_info/2, start_link/0, init/1, handle_call/3, handle_cast/2, code_change/3, terminate/2]).
+-export([get_room_pid/1, get_rooms_list/0, add_room/2]).
 
 % Data in #state.rooms saved as: {room_id, room_pid}
 -record(state, {rooms = []}).
@@ -14,48 +15,9 @@ init(_Args) ->
 
 handle_info(Info, State) ->
   case Info of
-    {rooms_list, From} ->
-      Rooms_list = lists:flatmap(fun(Room) -> {Id, _} = Room, [Id] end, State#state.rooms),
-      io:format("Rooms list: ~p~n", [Rooms_list]),
-      From ! {rooms_list, Rooms_list},
-      {noreply, State};
-    {room_add, {Room_id, Room}} ->
-      New_state = State#state{rooms = [{Room_id, Room} | State#state.rooms]},
-      {noreply, New_state};
-    {player_remove, {Room_id, Player_id}} ->
-      player_remove(State#state.rooms, {Room_id, Player_id}),
-      {noreply, State};
     {room_remove, Room_id} ->
       New_state = State#state{rooms = room_remove(State#state.rooms, Room_id)},
       {noreply, New_state};
-    {room_player_add, Room_id, Player} ->
-      Room_pid = search_room_pid(Room_id, State#state.rooms),
-      Room_pid ! {player_add, Player},
-      {noreply, State};
-    {action_earth_collision, Room_id, Player_id} ->
-      Room_pid = search_room_pid(Room_id, State#state.rooms),
-      Room_pid ! {action_earth_collision, Player_id},
-      {noreply, State};
-    {action_new_player_join, Room_id} ->
-      Room_pid = search_room_pid(Room_id, State#state.rooms),
-      Room_pid ! {action_new_player_join},
-      {noreply, State};
-    {game_master_asteroids_position, Data, Room_id} ->
-      Room_pid = search_room_pid(Room_id, State#state.rooms),
-      Room_pid ! {game_master_asteroids_position, Data},
-      {noreply, State};
-    {ship_position, Data, Room_id} ->
-      Room_pid = search_room_pid(Room_id, State#state.rooms),
-      Room_pid ! {ship_position, Data},
-      {noreply, State};
-    {ship_move, Data, Room_id} ->
-      Room_pid = search_room_pid(Room_id, State#state.rooms),
-      Room_pid ! {ship_move, Data},
-      {noreply, State};
-    {ship_shoot, Data, Room_id} ->
-      Room_pid = search_room_pid(Room_id, State#state.rooms),
-      Room_pid ! {ship_shoot, Data},
-      {noreply, State};
     Unknown ->
       io:format("Warning: unknown message received in 'global_room_state', message: ~p~n", [Unknown]),
       {noreply, State}
@@ -64,25 +26,43 @@ handle_info(Info, State) ->
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.
 
+% synchronous messages
 handle_call(_Request, _From, State) ->
-  {noreply, State}.
+  case _Request of
+    {room_add, {Room_id, Room_pid}} ->
+      New_state = State#state{rooms = [{Room_id, Room_pid} | State#state.rooms]},
+      {reply, ok, New_state};
+    get_rooms_list ->
+      Rooms_list = lists:flatmap(fun(Room) -> {Id, _} = Room, [Id] end, State#state.rooms),
+      io:format("Rooms list: ~p~n", [Rooms_list]),
+      {reply, Rooms_list, State};
+    {get_room_pid, Room_id} ->
+      {reply, search_room_pid(Room_id, State#state.rooms), State};
+    Unknown ->
+      io:format("Warning: unknown message received in 'global_room_state:handle_cast', message: ~p~n", [Unknown]),
+      {reply, ok, State}
+  end.
 
+% asynchronous messages
 handle_cast(_Request, State) ->
   {noreply, State}.
 
 terminate(_Reason, _State) ->
   ok.
 
+add_room(Room_id, Room_pid) ->
+  gen_server:call(whereis(global_rooms_state), {room_add, {Room_id, Room_pid}}).
+
+get_room_pid(Room_id) ->
+  gen_server:call(whereis(global_rooms_state), {get_room_pid, Room_id}).
+
+get_rooms_list() ->
+  gen_server:call(whereis(global_rooms_state), get_rooms_list).
+
 search_room_pid(Room_id, [{Room_id, Room_pid} | _]) -> Room_pid;
 search_room_pid(Room_id, [_ | XS]) -> search_room_pid(Room_id, XS);
 search_room_pid(Room_id, []) ->
   io:format("Warning: there is no such a room of id: ~p~n", [Room_id]).
-
-player_remove([{Room_id, Room_pid} | XS], {Room_id, Player_id}) ->
-  Room_pid ! {player_remove, Player_id},
-  XS;
-player_remove([X | XS], RP) -> lists:append([X], player_remove(XS, RP));
-player_remove([], _) -> [].
 
 room_remove([{Room_id, Room_pid} | XS], Room_id) ->
   Room_pid ! stop,

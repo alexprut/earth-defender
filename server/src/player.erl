@@ -1,11 +1,11 @@
 -module(player).
 
--export([start/1, loop/1, terminate/1]).
+-export([start/2, loop/1, terminate/1]).
 
 -record(state, {id, websocket}).
 
-start(Websocket) ->
-  spawn(player, loop, [#state{websocket = Websocket}]).
+start(Websocket, Id) ->
+  spawn(player, loop, [#state{websocket = Websocket, id = Id}]).
 
 loop(State) ->
   Websocket = State#state.websocket,
@@ -37,4 +37,6 @@ loop(State) ->
       terminate(self())
   end.
 
-terminate(PID) -> exit(PID, kill).
+terminate(PID) ->
+  io:format("Killed: player, pid: ~p~n", [PID]),
+  exit(PID, kill).

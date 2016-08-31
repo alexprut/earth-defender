@@ -59,7 +59,9 @@ loop(State) ->
       loop(New_State);
     {ship_shoot, Ship_id} ->
       broadcast(State#state.players, ship_shoot, Ship_id),
-      loop(State)
+      loop(State);
+    stop ->
+      terminate(self())
   end.
 
 update_position([[Ship_id, X, Y, Z] | XS], Ship_id, Direction) ->
@@ -85,4 +87,6 @@ broadcast([{_, Player_pid} | XS], Event, Data) ->
   Player_pid ! {Event, Data},
   broadcast(XS, Event, Data).
 
-terminate(PID) -> exit(PID, kill).
+terminate(PID) ->
+  io:format("Killed: room, pid: ~p~n", [PID]),
+  exit(PID, kill).
