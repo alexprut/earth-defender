@@ -4,9 +4,9 @@
 -export([init/2]).
 -export([websocket_handle/2]).
 -export([websocket_info/2]).
--export([terminate/2]).
+-export([terminate/3]).
 
--record(state, {player_id, room_id}).
+-record(state, {player_id = undef, room_id = undef, room_pid = undef, player_pid = undef}).
 
 init(Req, _Opts) ->
   {cowboy_websocket, Req, #state{}, ?WEBSOCKET_TIMEOUT}.
@@ -14,48 +14,47 @@ init(Req, _Opts) ->
 % Receive/External message Handler
 % Client that send messages to the server
 websocket_handle({text, Msg}, State) ->
-  erlang:display("dentro"),
   % The receiving message Msg is of type <<"[\"event\",data]">>
   io:format("Receiving message:~n~p~n", [jiffy:decode(Msg)]),
   [Event, Data] = jiffy:decode(Msg),
   case binary_to_list(Event) of
     "rooms_list" ->
-      global_rooms_state ! {rooms_list, self()},
-      reply_ok(State);
+      reply([<<"rooms_list">>, global_rooms_state:get_rooms_list()], State);
     "room_join" ->
       Room_id = Data,
-      Player = player:start(self()),
+      Room_pid = global_rooms_state:get_room_pid(Room_id),
       Player_id = uuid:generate(),
-      Player ! {player_id, Player_id},
-      New_state = State#state{player_id = Player_id, room_id = Room_id},
-      global_rooms_state ! {room_player_add, Room_id = Room_id, {Player_id, Player}},
-      global_rooms_state ! {action_new_player_join, New_state#state.room_id},
+      Player_pid = player:start(self(), Player_id),
+      self() ! {player_id, Player_id},
+      Room_pid ! {player_add, {Player_id, Player_pid}},
+      Room_pid ! {action_new_player_join},
+      New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
       reply_ok(New_state);
     "room_add" ->
       Room_id = uuid:generate(),
+      Room_pid = room:start(Room_id),
       io:format("Room id:~n~p~n", [Room_id]),
-      Room = room:start(Room_id),
-      global_rooms_state ! {room_add, {Room_id, Room}},
-      Player = player:start(self()),
+      global_rooms_state:add_room(Room_id, Room_pid),
       Player_id = uuid:generate(),
-      Player ! {player_id, Player_id},
-      Room ! {player_add, {Player_id, Player}},
-      New_state = State#state{player_id = Player_id, room_id = Room_id},
+      Player_pid = player:start(self(), Player_id),
+      self() ! {player_id, Player_id},
+      Room_pid ! {player_add, {Player_id, Player_pid}},
+      New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
       reply([<<"room_id">>, Room_id], New_state);
     "action_earth_collision" ->
-      global_rooms_state ! {action_earth_collision, State#state.room_id, State#state.player_id},
+      State#state.room_pid ! {action_earth_collision, State#state.player_id},
       reply_ok(State);
     "game_master_asteroids_position" ->
-      global_rooms_state ! {game_master_asteroids_position, Data, State#state.room_id},
+      State#state.room_pid ! {game_master_asteroids_position, Data},
       reply_ok(State);
     "game_ship_position" ->
-      global_rooms_state ! {ship_position, Data, State#state.room_id},
+      State#state.room_pid ! {ship_position, Data},
       reply_ok(State);
     "action_ship_move" ->
-      global_rooms_state ! {ship_move, Data, State#state.room_id},
+      State#state.room_pid ! {ship_move, Data},
       reply_ok(State);
     "action_ship_shoot" ->
-      global_rooms_state ! {ship_shoot, Data, State#state.room_id},
+      State#state.room_pid ! {ship_shoot, Data},
       reply_ok(State);
     "ping" ->
       reply([<<"pong">>], State);
@@ -72,8 +71,6 @@ websocket_info({Event, Data}, State) ->
   case Event of
     player_id ->
       reply([<<"player_id">>, Data], State);
-    rooms_list ->
-      reply([<<"rooms_list">>, Data], State);
     room_players_number ->
       reply([<<"room_players_number">>, Data], State);
     game_life ->
@@ -93,11 +90,18 @@ websocket_info({Event, Data}, State) ->
 
 % Reason con be: remote, crash or normal
 % In case the process websocket_handler crashes the terminate function will be executed
-terminate({crash, _, _}, _State) ->
-  io:format("Warning: process 'websocket_handler' crashed: ~nState:~n~p~n", [_State]),
-  global_rooms_state ! {player_remove, {_State#state.room_id, _State#state.player_id}};
-terminate(_Reason, _State) ->
-  global_rooms_state ! {player_remove, {_State#state.room_id, _State#state.player_id}}.
+terminate({crash, _, _}, _Req, State) ->
+  io:format("Warning: process 'websocket_handler' crashed: ~nState:~n~p~nTrace:~n~p~n", [State, erlang:get_stacktrace()]),
+  if
+    State#state.room_pid == undef -> ok;
+    true -> State#state.room_pid ! {player_remove, State#state.player_id}
+  end;
+terminate(_Reason, _Req, State) ->
+  io:format("Terminating websocket~n", []),
+  if
+    State#state.room_pid == undef -> ok;
+    true -> State#state.room_pid ! {player_remove, State#state.player_id}
+  end.
 
 % Utilities
 reply(Data, State) ->
