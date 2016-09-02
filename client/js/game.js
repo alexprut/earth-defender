@@ -33,6 +33,7 @@ var Game = function (config) {
     this.isMultiplayer = config.isMultiplayer || false;
     this.DOMHandler = new GameDOMHandler(this);
     this.roomId = null;
+    this.playerId = null;
 
     if (this.isMultiplayer) {
         if (config.servers) {
@@ -93,7 +94,7 @@ Game.prototype.setLife = function (life) {
     }
 };
 Game.prototype.decreaseLife = function () {
-    this.setLife(this.life - 200);
+    this.setLife(this.life - 100);
     if (this.server.websocket) {
         this.server.send("action_earth_collision");
     }

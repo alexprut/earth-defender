@@ -27,7 +27,6 @@ websocket_handle({text, Msg}, State) ->
       Player_pid = player:start(self(), Player_id),
       self() ! {player_id, Player_id},
       Room_pid ! {player_add, {Player_id, Player_pid}},
-      Room_pid ! {action_new_player_join},
       New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
       reply_ok(New_state);
     "room_add" ->
