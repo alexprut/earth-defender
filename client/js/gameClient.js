@@ -72,7 +72,9 @@ GameClient.prototype.onMessage = function (event) {
     switch (action) {
         case "room_players_number":
             this.game.setPlayers(data);
+            break;
         case "player_id":
+            this.game.playerId = data;
             break;
         case "room_id":
             this.game.roomId = data;

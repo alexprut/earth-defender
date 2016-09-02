@@ -25,23 +25,25 @@ loop(State) ->
       New_State = State#state{players = [{Player_id, Player_pid} | State#state.players]},
       Player_pid ! {game_life, New_State#state.life},
       broadcast(New_State#state.players, room_players_number, length(New_State#state.players)),
+      if
+        length(New_State#state.players) > 1 ->
+          broadcast([lists:last(State#state.players)], asteroid_position, []);
+        true -> ok
+      end,
       loop(New_State);
     {action_earth_collision, PlayerId} ->
-      [{Pid,_}|_] = State#state.players,
+      [{Pid, _} | _] = State#state.players,
       if
         (Pid == PlayerId) -> New_life = State#state.life - ?EARTH_LIFE_DECREASE;
         true -> New_life = State#state.life
       end,
       if
-        New_life >= 0 -> New_life = New_life;
+        New_life >= 0 -> New_life;
         New_life -> New_life = 0
       end,
       New_State = State#state{life = New_life},
       broadcast(State#state.players, game_life, New_life),
       loop(New_State);
-    {action_new_player_join} ->
-      broadcast([lists:last(State#state.players)], asteroid_position, []),
-      loop(State);
     {game_master_asteroids_position, Position} ->
       New_State = State#state{asteroids_position = Position},
       broadcast(State#state.players, asteroid_position_set, Position),
@@ -53,7 +55,7 @@ loop(State) ->
       loop(New_State);
     {ship_move, [Ship_id, Direction]} ->
       New_State = State#state{ships_position = update_position(State#state.ships_position, Ship_id, Direction)},
-      broadcast(State#state.players, ship_position_set, State#state.ships_position),
+      broadcast(State#state.players, ship_position_set, New_State#state.ships_position),
       loop(New_State);
     {ship_shoot, Ship_id} ->
       broadcast(State#state.players, ship_shoot, Ship_id),
