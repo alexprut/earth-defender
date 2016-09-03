@@ -17,6 +17,7 @@ websocket_handle({text, Msg}, State) ->
   % The receiving message Msg is of type <<"[\"event\",data]">>
   io:format("Receiving message:~n~p~n", [jiffy:decode(Msg)]),
   [Event, Data] = jiffy:decode(Msg),
+  global_rooms_state:init_broadcast_slaves({binary_to_list(Event), Data}),
   case binary_to_list(Event) of
     "rooms_list" ->
       reply([<<"rooms_list">>, global_rooms_state:get_rooms_list()], State);

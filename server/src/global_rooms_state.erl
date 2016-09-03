@@ -2,10 +2,10 @@
 -behavior(gen_server).
 
 -export([handle_info/2, start_link/0, init/1, handle_call/3, handle_cast/2, code_change/3, terminate/2]).
--export([get_room_pid/1, get_rooms_list/0, add_room/2]).
+-export([get_room_pid/1, get_rooms_list/0, add_room/2, broadcast_slaves/2, init_broadcast_slaves/1]).
 
 % Data in #state.rooms saved as: {room_id, room_pid}
--record(state, {rooms = []}).
+-record(state, {rooms = [], slaves = []}).
 
 start_link() ->
   gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -17,6 +17,16 @@ handle_info(Info, State) ->
   case Info of
     {room_remove, Room_id} ->
       New_state = State#state{rooms = room_remove(State#state.rooms, Room_id)},
+      {noreply, New_state};
+    {slave_connected, Slave_name} ->
+      case rpc:call(Slave_name, slave_handler, start_link, [node()]) of
+        {_, {_, Slave_pid}} ->
+          New_state = State#state{slaves = [{Slave_name, Slave_pid} | State#state.slaves]};
+        {_, Slave_pid} ->
+          New_state = State#state{slaves = [{Slave_name, Slave_pid} | State#state.slaves]};
+        _ ->
+          New_state = State
+      end,
       {noreply, New_state};
     Unknown ->
       io:format("Warning: unknown message received in 'global_room_state', message: ~p~n", [Unknown]),
@@ -44,6 +54,10 @@ handle_call(_Request, _From, State) ->
   end.
 
 % asynchronous messages
+handle_cast({Event, Data}, State) ->
+  io:format("Slaves: ~p~n", [State#state.slaves]),
+  broadcast_slaves(State#state.slaves, {Event, Data}),
+  {noreply, State};
 handle_cast(_Request, State) ->
   {noreply, State}.
 
@@ -69,3 +83,12 @@ room_remove([{Room_id, Room_pid} | XS], Room_id) ->
   XS;
 room_remove([X | XS], R) -> lists:append([X], room_remove(XS, R));
 room_remove([], _) -> [].
+
+broadcast_slaves([{Slave_name, Slave_pid} | Slaves], Data) ->
+  Slave_pid ! Data,
+  broadcast_slaves(Slaves, Data);
+broadcast_slaves([], Data) ->
+  ok.
+
+init_broadcast_slaves(Data) ->
+  gen_server:cast(whereis(global_rooms_state), Data).
