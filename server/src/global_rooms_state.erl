@@ -2,7 +2,7 @@
 -behavior(gen_server).
 
 -export([handle_info/2, start_link/0, init/1, handle_call/3, handle_cast/2, code_change/3, terminate/2]).
--export([get_room_pid/1, get_rooms_list/0, add_room/2, broadcast_slaves/2, init_broadcast_slaves/1]).
+-export([get_room_pid/1, get_rooms_list/0, add_room/2, broadcast_slaves/2, init_broadcast_slaves/1, get_servers_list/0]).
 
 % Data in #state.rooms saved as: {room_id, room_pid}
 -record(state, {rooms = [], slaves = []}).
@@ -18,12 +18,12 @@ handle_info(Info, State) ->
     {room_remove, Room_id} ->
       New_state = State#state{rooms = room_remove(State#state.rooms, Room_id)},
       {noreply, New_state};
-    {slave_connected, Slave_name} ->
+    {slave_connect, Slave_name, Service_url} ->
       case rpc:call(Slave_name, slave_handler, start_link, [node()]) of
         {_, {_, Slave_pid}} ->
-          New_state = State#state{slaves = [{Slave_name, Slave_pid} | State#state.slaves]};
+          New_state = State#state{slaves = [{Slave_name, Slave_pid, Service_url} | State#state.slaves]};
         {_, Slave_pid} ->
-          New_state = State#state{slaves = [{Slave_name, Slave_pid} | State#state.slaves]};
+          New_state = State#state{slaves = [{Slave_name, Slave_pid, Service_url} | State#state.slaves]};
         _ ->
           New_state = State
       end,
@@ -48,6 +48,12 @@ handle_call(_Request, _From, State) ->
       {reply, Rooms_list, State};
     {get_room_pid, Room_id} ->
       {reply, search_room_pid(Room_id, State#state.rooms), State};
+    servers_list ->
+      Server_list = lists:append([
+        [list_to_bitstring(utils:get_service_url())],
+        lists:flatmap(fun({_, _, Service_url}) -> [list_to_bitstring(Service_url)] end, State#state.slaves)
+      ]),
+      {reply, Server_list, State};
     Unknown ->
       io:format("Warning: unknown message received in 'global_room_state:handle_cast', message: ~p~n", [Unknown]),
       {reply, ok, State}
@@ -92,3 +98,6 @@ broadcast_slaves([], Data) ->
 
 init_broadcast_slaves(Data) ->
   gen_server:cast(whereis(global_rooms_state), Data).
+
+get_servers_list() ->
+  gen_server:call(whereis(global_rooms_state), servers_list).

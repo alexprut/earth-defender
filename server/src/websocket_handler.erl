@@ -29,13 +29,15 @@ websocket_handle({text, Msg}, State) ->
       global_rooms_state:init_broadcast_slaves({binary_to_list(Event), Data}),
       State#state.room_pid ! {ship_position, Data},
       global_rooms_state:init_broadcast_slaves({binary_to_list(Event), Data}),
+      self() ! {servers_list, global_rooms_state:get_servers_list()},
       reply([<<"game_reconnect">>], New_state);
     "rooms_list" ->
+      self() ! {servers_list, global_rooms_state:get_servers_list()},
       reply([<<"rooms_list">>, global_rooms_state:get_rooms_list()], State);
     "room_join" ->
       Room_id = Data,
       Room_pid = global_rooms_state:get_room_pid(Room_id),
-      Player_id = uuid:generate(),
+      Player_id = utils:generate_uuid(),
       Player_pid = player:start(self(), Player_id),
       self() ! {player_id, Player_id},
       Room_pid ! {player_add, {Player_id, Player_pid}},
@@ -43,11 +45,11 @@ websocket_handle({text, Msg}, State) ->
       global_rooms_state:init_broadcast_slaves({binary_to_list(Event), {Room_id, Player_id}}),
       reply_ok(New_state);
     "room_add" ->
-      Room_id = uuid:generate(),
+      Room_id = utils:generate_uuid(),
       Room_pid = room:start(Room_id),
       io:format("Room id:~n~p~n", [Room_id]),
       global_rooms_state:add_room(Room_id, Room_pid),
-      Player_id = uuid:generate(),
+      Player_id = utils:generate_uuid(),
       Player_pid = player:start(self(), Player_id),
       self() ! {player_id, Player_id},
       Room_pid ! {player_add, {Player_id, Player_pid}},
@@ -101,6 +103,8 @@ websocket_info({Event, Data}, State) ->
       reply([<<"ship_position_set">>, Data], State);
     ship_shoot ->
       reply([<<"ship_shoot">>, Data], State);
+    servers_list ->
+      reply([<<"servers_list">>, Data], State);
     Unknown ->
       io:format("Warning: websocket_info can not handle event:~n~p~n", [Unknown]),
       reply_ok(State)

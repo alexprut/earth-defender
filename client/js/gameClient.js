@@ -9,15 +9,19 @@ var GameClient = function (config) {
     this.reconnectTriesCounter = this.reconnectTries;
     this.reconnectInterval = 1;
     this.reconnectIntervalCounter = this.reconnectInterval; // grow exponential
+    console.log(this.servers);
 };
 GameClient.prototype.constructor = GameClient;
 GameClient.prototype.connect = function () {
-    this.websocket = new WebSocket('ws://' + this.servers);
+    this.websocket = new WebSocket('ws://' + this.servers[0]);
 
     this.websocket.onopen = this.onOpen.bind(this);
     this.websocket.onclose = this.onClose.bind(this);
     this.websocket.onerror = this.onError.bind(this);
     this.websocket.onmessage = this.onMessage.bind(this);
+};
+GameClient.prototype.setServers = function (servers) {
+    this.servers = servers;
 };
 GameClient.prototype.reconnect = function () {
     this.reconnectTriesCounter--;
@@ -128,6 +132,9 @@ GameClient.prototype.onMessage = function (event) {
             break;
         case "ship_shoot":
             this.game.shoot_online(data);
+            break;
+        case "servers_list":
+            this.setServers(data);
             break;
         case "pong":
             break;

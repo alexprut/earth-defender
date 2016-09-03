@@ -5,3 +5,4 @@
 -define(SHIP_MOVE_FACTOR_Z, 5).
 -define(WEBSOCKET_TIMEOUT, 120000).
 -define(WEBSOCKET_PORT, 8888).
+-define(DEFAULT_HOSTNAME, "localhost").
