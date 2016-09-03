@@ -85,7 +85,7 @@ room_remove([X | XS], R) -> lists:append([X], room_remove(XS, R));
 room_remove([], _) -> [].
 
 broadcast_slaves([{Slave_name, Slave_pid} | Slaves], Data) ->
-  Slave_pid ! Data,
+  gen_server:cast(Slave_pid, Data),
   broadcast_slaves(Slaves, Data);
 broadcast_slaves([], Data) ->
   ok.
