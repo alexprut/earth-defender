@@ -76,4 +76,4 @@ terminate(_Reason, _State) ->
 
 connect_to_master(Master_name) ->
   net_kernel:connect_node(Master_name),
-  {global_rooms_state, Master_name} ! {'slave_connected', node()}.
+  {global_rooms_state, Master_name} ! {'slave_connect', node(), utils:get_service_url()}.

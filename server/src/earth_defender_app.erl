@@ -10,24 +10,17 @@
 
 %% API.
 start(_Type, _Args) ->
-  case init:get_argument(port) of
-    error ->
-      Websocket_port = ?WEBSOCKET_PORT;
-    {_, [[Port]]} ->
-      {Websocket_port, []} = string:to_integer(Port)
-  end,
   Dispatch = cowboy_router:compile([
     {'_', [{"/websocket/", websocket_handler, []}]}
   ]),
-  {ok, _} = cowboy:start_clear(http, 100, [{port, Websocket_port}], #{
+  {ok, _} = cowboy:start_clear(http, 100, [{port, utils:get_port()}], #{
     env => #{dispatch => Dispatch}
   }),
-  case init:get_argument(role) of
-    error ->
+  case utils:get_role() of
+    master ->
       ok;
-    _ ->
-      {_, [[Master_name]]} = init:get_argument(master_name),
-      slave_handler:connect_to_master(erlang:list_to_atom(Master_name))
+    slave ->
+      slave_handler:connect_to_master(utils:get_master_name())
   end,
   earth_defender_sup:start_link().
 
