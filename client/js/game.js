@@ -418,8 +418,9 @@ Game.prototype.init = function () {
     this.DOMHandler.init();
     this.render();
 };
-Game.prototype.pause = function () {
+Game.prototype.pause = function (msg) {
     cancelAnimationFrame(this.requestAnimationFrameId);
+    this.DOMHandler.setMessage(msg);
 };
 Game.prototype.start = function () {
     if (this.requestAnimationFrameId) {
@@ -497,4 +498,8 @@ Game.prototype.render = function () {
             meteorite.position.z -= moveFactor;
         }
     }).bind(this));
+
+    if (this.roomId && this.playerId && !this.server.isConnected()) {
+        this.pause("reconnect to server ...");
+    }
 };

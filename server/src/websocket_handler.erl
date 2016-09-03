@@ -18,6 +18,18 @@ websocket_handle({text, Msg}, State) ->
   io:format("Receiving message:~n~p~n", [jiffy:decode(Msg)]),
   [Event, Data] = jiffy:decode(Msg),
   case binary_to_list(Event) of
+    "game_reconnect" ->
+      {Room_id, Player_id} = Data,
+      Room_pid = global_rooms_state:get_room_pid(Room_id),
+      Player_pid = player:start(self(), Player_id),
+      Room_pid ! {player_add, {Player_id, Player_pid}},
+      New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
+      global_rooms_state:init_broadcast_slaves({binary_to_list(Event), {Room_id, Player_id}}),
+      State#state.room_pid ! {game_master_asteroids_position, Data},
+      global_rooms_state:init_broadcast_slaves({binary_to_list(Event), Data}),
+      State#state.room_pid ! {ship_position, Data},
+      global_rooms_state:init_broadcast_slaves({binary_to_list(Event), Data}),
+      reply([<<"game_reconnect">>], New_state);
     "rooms_list" ->
       reply([<<"rooms_list">>, global_rooms_state:get_rooms_list()], State);
     "room_join" ->
