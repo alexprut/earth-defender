@@ -5,6 +5,10 @@ var GameClient = function (config) {
     this.queue = [];
     this.heartBeatInterval = 60000; // 1 minute
     this.heartBeatId = null;
+    this.reconnectTries = 5;
+    this.reconnectTriesCounter = this.reconnectTries;
+    this.reconnectInterval = 1;
+    this.reconnectIntervalCounter = this.reconnectInterval; // grow exponential
 };
 GameClient.prototype.constructor = GameClient;
 GameClient.prototype.connect = function () {
@@ -14,6 +18,15 @@ GameClient.prototype.connect = function () {
     this.websocket.onclose = this.onClose.bind(this);
     this.websocket.onerror = this.onError.bind(this);
     this.websocket.onmessage = this.onMessage.bind(this);
+};
+GameClient.prototype.reconnect = function () {
+    this.reconnectTriesCounter--;
+    if (this.reconnectTriesCounter >= 0 && !this.isConnected()) {
+        this.reconnectIntervalCounter = ((this.reconnectTries - this.reconnectTriesCounter) + 1) * 1000;
+        setTimeout((function () {
+            this.connect();
+        }).bind(this), this.reconnectIntervalCounter)
+    }
 };
 GameClient.prototype.disconnect = function () {
     this.send("player_remove");
@@ -51,6 +64,13 @@ GameClient.prototype.send = function (event, data) {
 };
 GameClient.prototype.onOpen = function (event) {
     console.log('onOpen');
+    this.reconnectIntervalCounter = this.reconnectInterval;
+    this.reconnectTriesCounter = this.reconnectTries;
+
+    if (this.game.roomId !== null && this.game.playerId !== null) {
+        this.send('game_reconnect', [this.game.roomId, this.game.playerId]);
+    }
+
     var sendData;
     while (sendData = this.queue.shift()) {
         this.send(sendData.event, sendData.data);
@@ -60,6 +80,8 @@ GameClient.prototype.onOpen = function (event) {
 };
 GameClient.prototype.onClose = function (event) {
     console.log('onClose');
+    console.log(event);
+    this.reconnect();
 };
 GameClient.prototype.onMessage = function (event) {
     var receivedData = JSON.parse(event.data);
@@ -70,6 +92,9 @@ GameClient.prototype.onMessage = function (event) {
     console.log(event);
 
     switch (action) {
+        case "game_reconnect":
+            this.game.start();
+            break;
         case "room_players_number":
             this.game.setPlayers(data);
             break;
