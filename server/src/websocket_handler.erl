@@ -21,7 +21,8 @@ websocket_handle({text, Msg}, State) ->
     "game_reconnect" ->
       [Room_id, Player_id] = Data,
       Room_pid = global_rooms_state:get_room_pid(Room_id),
-      Player_pid = player:start(self(), Player_id),
+      Player_pid = room:get_player_pid(Room_pid, Player_id),
+      Player_pid ! {websocket, self()},
       Room_pid ! {player_add, {Player_id, Player_pid}},
       New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
       self() ! {servers_list, global_rooms_state:get_servers_list()},
@@ -41,7 +42,7 @@ websocket_handle({text, Msg}, State) ->
       reply([<<"room_id">>, Room_id], New_state);
     "room_add" ->
       Room_id = utils:generate_uuid(),
-      Room_pid = room:start(Room_id),
+      {_, Room_pid} = room:start_link(Room_id),
       io:format("Room id:~n~p~n", [Room_id]),
       global_rooms_state:add_room(Room_id, Room_pid),
       Player_id = utils:generate_uuid(),

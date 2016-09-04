@@ -11,8 +11,8 @@ start_link(Master_name) ->
 init(_Args) ->
   {ok, #state{master_name = _Args}}.
 
-handle_info(Info, State) ->
-  case Info of
+handle_info(Data, State) ->
+  case Data of
     Unknown ->
       io:format("Warning: unknown message received in 'slave_handler', message: ~p~n", [Unknown]),
       {noreply, State}
@@ -38,7 +38,7 @@ handle_cast({Event, Data}, State) ->
       {noreply, New_state};
     "room_add" ->
       {Room_id, Player_id} = Data,
-      Room_pid = room:start(Room_id),
+      {_, Room_pid} = room:start_link(Room_id),
       io:format("Room id:~n~p~n", [Room_id]),
       global_rooms_state:add_room(Room_id, Room_pid),
       Player_pid = player:start(self(), Player_id),

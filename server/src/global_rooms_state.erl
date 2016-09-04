@@ -13,8 +13,8 @@ start_link() ->
 init(_Args) ->
   {ok, #state{}}.
 
-handle_info(Info, State) ->
-  case Info of
+handle_info(Data, State) ->
+  case Data of
     {room_remove, Room_id} ->
       New_state = State#state{rooms = room_remove(State#state.rooms, Room_id)},
       {noreply, New_state};
@@ -93,7 +93,7 @@ room_remove([], _) -> [].
 broadcast_slaves([{_, Slave_pid, _} | Slaves], Data) ->
   gen_server:cast(Slave_pid, Data),
   broadcast_slaves(Slaves, Data);
-broadcast_slaves([], Data) ->
+broadcast_slaves([], _) ->
   ok.
 
 init_broadcast_slaves(Data) ->
