@@ -21,9 +21,9 @@ handle_info(Info, State) ->
     {slave_connect, Slave_name, Service_url} ->
       case rpc:call(Slave_name, slave_handler, start_link, [node()]) of
         {_, {_, Slave_pid}} ->
-          New_state = State#state{slaves = [{Slave_name, Slave_pid, Service_url} | State#state.slaves]};
+          New_state = State#state{slaves = [{Slave_name, Slave_pid, list_to_bitstring(Service_url)} | State#state.slaves]};
         {_, Slave_pid} ->
-          New_state = State#state{slaves = [{Slave_name, Slave_pid, Service_url} | State#state.slaves]};
+          New_state = State#state{slaves = [{Slave_name, Slave_pid, list_to_bitstring(Service_url)} | State#state.slaves]};
         _ ->
           New_state = State
       end,
@@ -51,7 +51,7 @@ handle_call(_Request, _From, State) ->
     servers_list ->
       Server_list = lists:append([
         [list_to_bitstring(utils:get_service_url())],
-        lists:flatmap(fun({_, _, Service_url}) -> [list_to_bitstring(Service_url)] end, State#state.slaves)
+        lists:flatmap(fun({_, _, Service_url}) -> [Service_url] end, State#state.slaves)
       ]),
       {reply, Server_list, State};
     Unknown ->
@@ -90,7 +90,7 @@ room_remove([{Room_id, Room_pid} | XS], Room_id) ->
 room_remove([X | XS], R) -> lists:append([X], room_remove(XS, R));
 room_remove([], _) -> [].
 
-broadcast_slaves([{Slave_name, Slave_pid} | Slaves], Data) ->
+broadcast_slaves([{_, Slave_pid, _} | Slaves], Data) ->
   gen_server:cast(Slave_pid, Data),
   broadcast_slaves(Slaves, Data);
 broadcast_slaves([], Data) ->
