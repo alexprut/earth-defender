@@ -9,7 +9,6 @@ var GameClient = function (config) {
     this.reconnectTriesCounter = this.reconnectTries;
     this.reconnectInterval = 1;
     this.reconnectIntervalCounter = this.reconnectInterval; // grow exponential
-    console.log(this.servers);
 };
 GameClient.prototype.constructor = GameClient;
 GameClient.prototype.connect = function () {
@@ -28,6 +27,11 @@ GameClient.prototype.reconnect = function () {
     if (this.reconnectTriesCounter >= 0 && !this.isConnected()) {
         this.reconnectIntervalCounter = ((this.reconnectTries - this.reconnectTriesCounter) + 1) * 1000;
         setTimeout((function () {
+            if (this.reconnectTriesCounter === 3) {
+                if (this.servers.length > 1) {
+                    this.servers.shift();
+                }
+            }
             this.connect();
         }).bind(this), this.reconnectIntervalCounter)
     }
