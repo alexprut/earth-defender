@@ -38,5 +38,5 @@ loop(State) ->
   end.
 
 terminate(PID) ->
-  io:format("Killed: player, pid: ~p~n", [PID]),
+  utils:log("Killed: player, pid: ~p~n", [PID]),
   exit(PID, kill).
