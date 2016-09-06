@@ -2,7 +2,7 @@
 
 -include("config.hrl").
 
--export([generate_uuid/0, get_role/0, get_master_name/0, get_port/0, get_service_url/0]).
+-export([generate_uuid/0, get_initial_role/0, get_master_name/0, get_port/0, get_service_url/0, log/2]).
 
 %% FIXME the UUID is not distributed and unique
 generate_uuid() ->
@@ -12,7 +12,15 @@ generate_uuid() ->
     )
   ).
 
-get_role() ->
+log(Msg, Args) ->
+  case ?DEBUG of
+    true ->
+      io:format(Msg, Args);
+    _ ->
+      ok
+  end.
+
+get_initial_role() ->
   case init:get_argument(role) of
     error ->
       master;

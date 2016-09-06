@@ -10,15 +10,15 @@
 
 %% API.
 
--spec start_link() -> {ok, pid()}.
 start_link() ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %% supervisor.
 
-init([]) ->
+init(_Args) ->
   Procs = [
-    {global_rooms_state,
+    {
+      global_rooms_state,
       {global_rooms_state, start_link, []},
       permanent,
       infinity,

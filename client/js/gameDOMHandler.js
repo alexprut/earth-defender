@@ -7,7 +7,7 @@ Element.prototype.remove = function () {
 
 var GameDOMHandler = function (gameHandler) {
     (function updateRendererSize() {
-        document.body.addEventListener("onresize", function () {
+        document.body.addEventListener("resize", function () {
             gameHandler.setRendererSize(window.innerWidth, window.innerHeight);
         })
     })();

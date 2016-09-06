@@ -11,7 +11,7 @@ document.body.onload = function () {
         'isMultiplayer': true,
         'maxPlayers': 10,
         'debug': false,
-        'servers': ['localhost:8888/websocket']
+        'servers': ['localhost:8888/websocket', 'localhost:8889/websocket']
     });
     game.init();
     game.stop();

@@ -37,9 +37,6 @@ GameClient.prototype.reconnect = function () {
     }
 };
 GameClient.prototype.disconnect = function () {
-    this.send("player_remove");
-    this.send("players_get");
-
     this.websocket.close();
 };
 GameClient.prototype.stopHeartBeat = function () {
@@ -139,6 +136,10 @@ GameClient.prototype.onMessage = function (event) {
             break;
         case "servers_list":
             this.setServers(data);
+            break;
+        case "servers_list_redirect":
+            this.setServers(data);
+            this.disconnect();
             break;
         case "pong":
             break;
