@@ -7,9 +7,11 @@ start_monitor_slave(Slave_pid) ->
 
 slave_monitor(Slave_pid) ->
   Ref = monitor(process, Slave_pid),
+  utils:log("Monitoring slave. ~n", []),
   receive
-    {'DOWN', Ref, Type, Object, Info} ->
+    {'DOWN', Ref, _Type, _Object, Info} ->
       utils:log("Slave died, info: ~p~n", [Info]),
+      global_rooms_state:slave_remove(Slave_pid),
       exit(self(), kill)
   end.
 
@@ -21,7 +23,7 @@ master_monitor(Master_pid) ->
   Ref = monitor(process, Master_pid),
   utils:log("Monitoring master. ~n", []),
   receive
-    {'DOWN', Ref, Type, Object, Info} ->
+    {'DOWN', Ref, _Type, _Object, Info} ->
       utils:log("Master died, info: ~p~n", [Info]),
       global_rooms_state ! master_takeover
   end.

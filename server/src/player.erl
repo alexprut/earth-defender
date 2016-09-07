@@ -33,6 +33,12 @@ loop(State) ->
     {ship_shoot, Ship_id} ->
       Websocket ! {ship_shoot, Ship_id},
       loop(State);
+    {servers_list, Data} ->
+      Websocket ! {servers_list, Data},
+      loop(State);
+    Unknown ->
+      utils:log("Warning: unknown message received in 'player:loop', message: ~p~n", [Unknown]),
+      loop(State);
     stop ->
       terminate(self())
   end.

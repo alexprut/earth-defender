@@ -35,6 +35,9 @@ handle_call(_Request, _From, State) ->
 
 handle_info(Data, State) ->
   case Data of
+    {broadcast_players, Msg} ->
+      lists:flatmap(fun({_, Player_pid}) -> Player_pid ! Msg, [] end, State#room_state.players),
+      {noreply, State};
     {room_id, Room_id} ->
       {noreply, State#room_state{id = Room_id}};
     {player_remove, Player_id} ->

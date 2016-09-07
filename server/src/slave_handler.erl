@@ -3,17 +3,17 @@
 -include("room_state.hrl").
 
 -export([
-  handle_info/2, start_link/2, init/1, handle_call/3, handle_cast/2, code_change/3, terminate/2,
-  connect_to_master/1, set_state/2
+  handle_info/2, start_link/1, init/1, handle_call/3, handle_cast/2, code_change/3, terminate/2,
+  connect_to_master/1, set_state/2, get_master_data/0
 ]).
 
--record(state, {master_name, master_pid}).
+-record(state, {master_pid, master_name, master_service_url}).
 
-start_link(Master_name, Master_pid) ->
-  gen_server:start_link({local, ?MODULE}, ?MODULE, [Master_name, Master_pid], []).
+start_link({Master_name, Master_pid, Master_service_url}) ->
+  gen_server:start_link({local, ?MODULE}, ?MODULE, {Master_name, Master_pid, Master_service_url}, []).
 
-init([Master_name, Master_pid]) ->
-  {ok, #state{master_name = Master_name, master_pid = Master_pid}}.
+init({Master_name, Master_pid, Master_service_url}) ->
+  {ok, #state{master_pid = Master_pid, master_name = Master_name, master_service_url = Master_service_url}}.
 
 handle_info(Data, State) ->
   case Data of
@@ -32,12 +32,28 @@ code_change(_OldVsn, State, _Extra) ->
 
 % synchronous messages
 handle_call(_Request, _From, State) ->
-  {reply, ok, State}.
+  case _Request of
+    get_master_data ->
+      Master = {State#state.master_name, State#state.master_pid, State#state.master_service_url},
+      {reply, Master, State};
+    Unknown ->
+      utils:log("Warning: unknown message received in 'slave_handler:handle_call', message: ~p~n", [Unknown]),
+      {noreply, State}
+  end.
 
 % asynchronous messages
 handle_cast({Event, Data}, State) ->
   utils:log("Receiving message in Slave:~n~p~n", [{Event, Data}]),
   case Event of
+    set_state_master ->
+      {Master_name, Master_pid, Master_service_url} = Data,
+      New_state = State#state{master_pid = Master_pid, master_name = Master_name, master_service_url = Master_service_url},
+      monitors:start_monitor_master(New_state#state.master_pid),
+      {noreply, New_state};
+    set_state_slaves ->
+      set_state([], Data),
+      utils:log("Updated slaves list.~n", []),
+      {noreply, State};
     "room_join" ->
       {Room_id, Player_id} = Data,
       Room_pid = global_rooms_state:get_room_pid(Room_id),
@@ -79,7 +95,7 @@ handle_cast({Event, Data}, State) ->
       Room_pid ! {ship_shoot, Msg},
       {noreply, State};
     Unknown ->
-      utils:log("Warning: 'slave_handler' can not handle event:~n~p~n", [Unknown]),
+      utils:log("Warning: 'slave_handler:handle_cast' can not handle event:~n~p~n", [Unknown]),
       {noreply, State}
   end;
 handle_cast(_Request, State) ->
@@ -92,8 +108,12 @@ handle_cast(_Request, State) ->
 terminate(_Reason, _State) ->
   ok.
 
+get_master_data() ->
+  gen_server:call(whereis(slave_handler), {get_master_data}).
+
 set_state(Rooms, Slaves) ->
-  add_rooms(Rooms).
+  add_rooms(Rooms),
+  global_rooms_state:set_state_slaves(Slaves).
 
 add_rooms([State | Rooms]) ->
   {_, Room_pid} = room:start_link(State#room_state.id),
