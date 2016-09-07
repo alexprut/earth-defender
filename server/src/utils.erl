@@ -15,7 +15,7 @@ generate_uuid() ->
 log(Msg, Args) ->
   case ?DEBUG of
     true ->
-      io:format(Msg, Args);
+      io:format(user, Msg, Args);
     _ ->
       ok
   end.

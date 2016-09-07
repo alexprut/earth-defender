@@ -9,6 +9,7 @@ slave_monitor(Slave_pid) ->
   Ref = monitor(process, Slave_pid),
   receive
     {'DOWN', Ref, Type, Object, Info} ->
+      utils:log("Slave died, info: ~p~n", [Info]),
       exit(self(), kill)
   end.
 
@@ -21,8 +22,6 @@ master_monitor(Master_pid) ->
   utils:log("Monitoring master. ~n", []),
   receive
     {'DOWN', Ref, Type, Object, Info} ->
-      erlang:display("Master died"),
-      erlang:display("global_rooms_state_opid"),
-      erlang:display(whereis(global_rooms_state)),
+      utils:log("Master died, info: ~p~n", [Info]),
       global_rooms_state ! master_takeover
   end.
