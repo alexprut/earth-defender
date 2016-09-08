@@ -110,7 +110,9 @@ handle_call(_Request, _From, State) ->
       utils:log("Rooms list: ~p~n", [Rooms_list]),
       {reply, Rooms_list, State};
     {get_room_pid, Room_id} ->
-      {reply, search_room_pid(Room_id, State#state.rooms), State};
+      utils:log("Searching room_pid of room id:~n~p~n", [Room_id]),
+      Room_pid = search_room_pid(Room_id, State#state.rooms),
+      {reply, Room_pid, State};
     servers_list ->
       Server_list = create_servers_list(State),
       {reply, Server_list, State};
@@ -143,7 +145,7 @@ search_room_pid(Room_id, [{Room_id, Room_pid} | _]) -> Room_pid;
 search_room_pid(Room_id, [_ | XS]) -> search_room_pid(Room_id, XS);
 search_room_pid(Room_id, []) ->
   utils:log("Warning: there is no such a room of id: ~p~n", [Room_id]),
-  [].
+  error.
 
 slave_remove([{_, Slave_pid, _} | XS], Slave_pid) ->
   XS;

@@ -18,10 +18,6 @@ init(_Room_id) ->
 % synchronous messages
 handle_call(_Request, _From, State) ->
   case _Request of
-    {set_state_player, Player_id} ->
-      Player_pid = player:start(whereis(slave_handler), Player_id),
-      NewState = State#room_state{players = [{Player_id, Player_pid} | State#room_state.players]},
-      {reply, ok, NewState};
     create_state_snapshot ->
       utils:log("Master local state room snapshot: ~n~p~n", [State]),
       {reply, State, State};
@@ -117,7 +113,8 @@ find_player_pid([{Player_id, Player_pid} | _], Player_id) ->
   Player_pid;
 find_player_pid([{_, _} | Players], Player_id) ->
   find_player_pid(Players, Player_id);
-find_player_pid([], _) ->
+find_player_pid([], Player_id) ->
+  utils:log("Warning: there is no such a player with id: ~p~n", [Player_id]),
   error.
 
 get_player_pid(Room_pid, Player_id) ->
@@ -131,11 +128,16 @@ broadcast([{_, Player_pid} | XS], Event, Data) ->
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.
 
-handle_cast(_Request, State) ->
+handle_cast(_Request, _State) ->
   case _Request of
-    {set_state, NewState} ->
-      utils:log("Updating room state to: ~n~p~n", [State]),
-      {noreply, NewState}
+    {set_state, New_state} ->
+      utils:log("Updating room state to: ~n~p~n", [New_state]),
+      Players = lists:flatmap(
+        fun({Player_id, _}) ->
+          [{Player_id, player:start(whereis(slave_handler), Player_id)}] end,
+          New_state#room_state.players
+      ),
+      {noreply, New_state#room_state{players = Players}}
   end.
 
 terminate(_Reason, _State) ->
