@@ -13,8 +13,8 @@ loop(State) ->
     {player_id, Player_id} ->
       Websocket ! {player_id, Player_id},
       loop(State#state{id = Player_id});
-    {websocket, Websocket} ->
-      loop(State#state{websocket = Websocket});
+    {websocket, New_websocket} ->
+      loop(State#state{websocket = New_websocket});
     {room_players_number, Players_number} ->
       Websocket ! {room_players_number, Players_number},
       loop(State);
@@ -36,11 +36,11 @@ loop(State) ->
     {servers_list, Data} ->
       Websocket ! {servers_list, Data},
       loop(State);
+    stop ->
+      terminate(self());
     Unknown ->
       utils:log("Warning: unknown message received in 'player:loop', message: ~p~n", [Unknown]),
-      loop(State);
-    stop ->
-      terminate(self())
+      loop(State)
   end.
 
 terminate(PID) ->
