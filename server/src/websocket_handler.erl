@@ -6,12 +6,9 @@
 -export([websocket_info/2]).
 -export([terminate/3]).
 
--define(WSKey,{pubsub,wsbroadcast}).
-
 -record(state, {player_id = undef, room_id = undef, room_pid = undef, player_pid = undef, ship_id = undef}).
 
 init(Req, _Opts) ->
-  gproc:reg({p, l, ?WSKey}),
   {cowboy_websocket, Req, #state{}, ?WEBSOCKET_TIMEOUT}.
 
 % Receive/External message Handler
@@ -107,7 +104,6 @@ websocket_info({Event, Data}, State) ->
       reply([<<"game_life">>, Data], State);
     asteroid_position ->
       reply([<<"asteroid_position">>, Data], State);
-      %gproc:send({p, l, ?WSKey}, {self(), ?WSKey, [<<"asteroid_position">>, Data]});
     asteroid_position_set ->
       reply([<<"asteroid_position_set">>, Data], State);
     ship_position_set ->
