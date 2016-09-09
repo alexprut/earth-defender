@@ -13,8 +13,8 @@ loop(State) ->
     {player_id, Player_id} ->
       Websocket ! {player_id, Player_id},
       loop(State#state{id = Player_id});
-    {websocket, Websocket} ->
-      loop(State#state{websocket = Websocket});
+    {websocket, New_websocket} ->
+      loop(State#state{websocket = New_websocket});
     {room_players_number, Players_number} ->
       Websocket ! {room_players_number, Players_number},
       loop(State);
