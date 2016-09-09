@@ -1,11 +1,11 @@
 -module(player).
 
--export([start/2, loop/1, terminate/1]).
+-export([start/3, loop/1, terminate/1]).
 
--record(state, {id, websocket}).
+-record(state, {id, ship_id, websocket}).
 
-start(Websocket, Id) ->
-  spawn(player, loop, [#state{websocket = Websocket, id = Id}]).
+start(Websocket, Id, Ship_id) ->
+  spawn(player, loop, [#state{websocket = Websocket, id = Id, ship_id = Ship_id}]).
 
 loop(State) ->
   Websocket = State#state.websocket,
@@ -33,14 +33,17 @@ loop(State) ->
     {ship_shoot, Ship_id} ->
       Websocket ! {ship_shoot, Ship_id},
       loop(State);
+    {remove_ship_scene, Ship_id} ->
+      Websocket ! {remove_ship_scene, Ship_id},
+      loop(State);
     {servers_list, Data} ->
       Websocket ! {servers_list, Data},
       loop(State);
+    stop ->
+      terminate(self());
     Unknown ->
       utils:log("Warning: unknown message received in 'player:loop', message: ~p~n", [Unknown]),
-      loop(State);
-    stop ->
-      terminate(self())
+      loop(State)
   end.
 
 terminate(PID) ->

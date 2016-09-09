@@ -41,7 +41,8 @@ handle_info(Data, State) ->
     {room_id, Room_id} ->
       {noreply, State#room_state{id = Room_id}};
     {player_remove, Player_id} ->
-      New_State = State#room_state{players = player_remove(State#room_state.players, Player_id)},
+      New_Ship_Positions = remove_ship_from_list(State#room_state.ships_position, get_ship_id(State#room_state.players, Player_id)),
+      New_State = State#room_state{players = player_remove(State#room_state.players, Player_id), ships_position = New_Ship_Positions},
       if
         length(New_State#room_state.players) == 0 ->
           global_rooms_state ! {room_remove, State#room_state.id};
@@ -49,8 +50,8 @@ handle_info(Data, State) ->
           broadcast(New_State#room_state.players, room_players_number, length(New_State#room_state.players))
       end,
       {noreply, New_State};
-    {player_add, {Player_id, Player_pid}} ->
-      New_State = State#room_state{players = [{Player_id, Player_pid} | State#room_state.players]},
+    {player_add, {Player_id, Player_pid, Ship_id}} ->
+      New_State = State#room_state{players = [{Player_id, Player_pid, Ship_id} | State#room_state.players]},
       Player_pid ! {game_life, New_State#room_state.life},
       broadcast(New_State#room_state.players, room_players_number, length(New_State#room_state.players)),
       if
@@ -60,7 +61,7 @@ handle_info(Data, State) ->
       end,
       {noreply, New_State};
     {action_earth_collision, PlayerId} ->
-      [{Pid, _} | _] = State#room_state.players,
+      [{Pid, _, _} | _] = State#room_state.players,
       if
         (Pid == PlayerId) -> New_life = State#room_state.life - ?EARTH_LIFE_DECREASE;
         true -> New_life = State#room_state.life
@@ -107,11 +108,23 @@ update_position([[Ship_id, X, Y, Z] | XS], Ship_id, Direction) ->
 update_position([X | XS], Ship_id, Direction) -> lists:append([X], update_position(XS, Ship_id, Direction));
 update_position([], _, _) -> [].
 
-player_remove([{Player_id, Player_pid} | XS], Player_id) ->
+get_ship_id([{Player_id, Player_pid, Ship_id} | XS] , Player_id) ->
+  Ship_id;
+get_ship_id([X | XS], Player_id) -> get_ship_id (XS, Player_id);
+get_ship_id([], Player_id) -> error.
+
+
+player_remove([{Player_id, Player_pid, Ship_id} | XS], Player_id) ->
+  broadcast(XS, remove_ship_scene, Ship_id),
   Player_pid ! stop,
   XS;
 player_remove([X | XS], Player_id) -> lists:append([X], player_remove(XS, Player_id));
 player_remove([], _) -> [].
+
+remove_ship_from_list([[Ship_id, _, _, _] | XS], Ship_id) ->
+  XS;
+remove_ship_from_list([X | XS], Ship_id) -> lists:append([X], remove_ship_from_list(XS, Ship_id));
+remove_ship_from_list([], _) -> [].
 
 find_player_pid([{Player_id, Player_pid} | _], Player_id) ->
   Player_pid;
@@ -124,7 +137,7 @@ get_player_pid(Room_pid, Player_id) ->
   gen_server:call(Room_pid, {find_player_pid, Player_id}).
 
 broadcast([], _, _) -> ok;
-broadcast([{_, Player_pid} | XS], Event, Data) ->
+broadcast([{_, Player_pid, _} | XS], Event, Data) ->
   Player_pid ! {Event, Data},
   broadcast(XS, Event, Data).
 

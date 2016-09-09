@@ -163,6 +163,12 @@ Game.prototype.createSpaceShip = function () {
 
     return spaceShip[index];
 };
+Game.prototype.removeShipFromScene = function (id_ship) {
+    this.scene.remove(this.spaceShip[id_ship]);
+};
+Game.prototype.reAddShipFromScene = function (id_ship) {
+    this.scene.add(this.spaceShip[id_ship]);
+};
 Game.prototype.normalizeNumbers = function (number, factor) {
     factor = factor || 10000;
     var tmp = number * factor;

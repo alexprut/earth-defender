@@ -94,7 +94,7 @@ var GameDOMHandler = function (gameHandler) {
                     // Control if a room was selected, otherwise just do nothing when the Join button is pressed
                     if (getSelectedRoom()) {
                         hideComponentGameRoom();
-                        gameHandler.server.send('room_join', getSelectedRoom());
+                        gameHandler.server.send('room_join', [getSelectedRoom(),index]);
                         gameHandler.stop("Loading ...");
                         gameHandler.start();
 
@@ -110,7 +110,7 @@ var GameDOMHandler = function (gameHandler) {
 
                 document.getElementById('gameRoom-create').addEventListener('click', function () {
                     hideComponentGameRoom();
-                    gameHandler.server.send('room_add');
+                    gameHandler.server.send('room_add',index);
                     gameHandler.stop("Loading ...");
                     gameHandler.start();
 

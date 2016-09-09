@@ -73,7 +73,7 @@ GameClient.prototype.onOpen = function (event) {
     this.reconnectTriesCounter = this.reconnectTries;
 
     if (this.game.roomId !== null && this.game.playerId !== null) {
-        this.send('game_reconnect', [this.game.roomId, this.game.playerId]);
+        this.send('game_reconnect', [this.game.roomId, this.game.playerId, index]);
     }
 
     var sendData;
@@ -98,6 +98,7 @@ GameClient.prototype.onMessage = function (event) {
 
     switch (action) {
         case "game_reconnect":
+            this.game.reAddShipFromScene(Data);
             this.game.start();
             break;
         case "room_players_number":
@@ -133,6 +134,9 @@ GameClient.prototype.onMessage = function (event) {
             break;
         case "ship_shoot":
             this.game.shoot_online(data);
+            break;
+        case "remove_ship_scene":
+            this.game.removeShipFromScene(data);
             break;
         case "servers_list":
             this.setServers(data);
