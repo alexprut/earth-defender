@@ -46,6 +46,15 @@ handle_info(Data, State) ->
           broadcast(New_state#room_state.players, room_players_number, length(New_state#room_state.players))
       end,
       {noreply, New_state};
+    {player_reconnect, Player_pid} ->
+      Player_pid ! {game_life, State#room_state.life},
+      broadcast(State#room_state.players, room_players_number, length(State#room_state.players)),
+      if
+        length(State#room_state.players) > 1 ->
+          broadcast([lists:last(State#room_state.players)], asteroid_position, []);
+        true -> ok
+      end,
+      {noreply, State};
     {player_add, {Player_id, Player_pid, Ship_id}} ->
       New_state = State#room_state{players = [{Player_id, Player_pid, Ship_id} | State#room_state.players]},
       Player_pid ! {game_life, New_state#room_state.life},
@@ -56,10 +65,11 @@ handle_info(Data, State) ->
         true -> ok
       end,
       {noreply, New_state};
-    {action_earth_collision, PlayerId} ->
-      [{Pid, _, _} | _] = State#room_state.players,
+    {action_earth_collision, Player_id} ->
+      utils:log("Earth collission, player_id: ~p, players: ~p~n", [Player_id, State#room_state.players]),
+      [{P_id, _, _} | _] = State#room_state.players,
       if
-        (Pid == PlayerId) -> New_life = State#room_state.life - ?EARTH_LIFE_DECREASE;
+        (P_id == Player_id) -> New_life = State#room_state.life - ?EARTH_LIFE_DECREASE;
         true -> New_life = State#room_state.life
       end,
       if

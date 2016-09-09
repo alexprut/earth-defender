@@ -55,22 +55,22 @@ handle_cast({Event, Data}, State) ->
       utils:log("Updated slaves list.~n", []),
       {noreply, State};
     "room_join" ->
-      {Room_id, Player_id} = Data,
+      {Room_id, Player_id, Ship_id} = Data,
       Room_pid = global_rooms_state:get_room_pid(Room_id),
-      Player_pid = player:start(self(), Player_id),
+      Player_pid = player:start(self(), Player_id, Ship_id),
       Room_pid ! {player_add, {Player_id, Player_pid}},
       {noreply, State};
     "room_add" ->
-      {Room_id, Player_id} = Data,
+      {Room_id, Player_id, Ship_id} = Data,
       {_, Room_pid} = room:start_link(Room_id),
       utils:log("Room id:~n~p~n", [Room_id]),
       global_rooms_state:add_room(Room_id, Room_pid),
-      Player_pid = player:start(self(), Player_id),
+      Player_pid = player:start(self(), Player_id, Ship_id),
       Room_pid ! {player_add, {Player_id, Player_pid}},
       New_state = State#state{},
       {noreply, New_state};
     "action_earth_collision" ->
-      {Room_id, Player_id, Msg} = Data,
+      {Room_id, Player_id} = Data,
       Room_pid = global_rooms_state:find_room_pid(Room_id),
       Room_pid ! {action_earth_collision, Player_id},
       {noreply, State};
@@ -116,11 +116,11 @@ set_state(Rooms, Slaves) ->
   global_rooms_state:set_state_slaves(Slaves).
 
 add_rooms([State | Rooms]) ->
+  add_rooms(Rooms),
   {_, Room_pid} = room:start_link(State#room_state.id),
   utils:log("Room pid in slave: ~p~n", [Room_pid]),
   room:set_state(Room_pid, State),
-  global_rooms_state:add_room(State#room_state.id, Room_pid),
-  add_rooms(Rooms);
+  global_rooms_state:add_room(State#room_state.id, Room_pid);
 add_rooms([]) ->
   ok.
 
