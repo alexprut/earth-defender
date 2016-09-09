@@ -98,7 +98,7 @@ GameClient.prototype.onMessage = function (event) {
 
     switch (action) {
         case "game_reconnect":
-            this.game.reAddShipFromScene(Data);
+            this.game.reAddShipFromScene(data);
             this.game.start();
             break;
         case "room_players_number":
