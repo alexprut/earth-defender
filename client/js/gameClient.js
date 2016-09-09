@@ -145,6 +145,9 @@ GameClient.prototype.onMessage = function (event) {
             this.setServers(data);
             this.disconnect();
             break;
+        case "server_error":
+            window.location.reload();
+            break;
         case "pong":
             break;
         default:

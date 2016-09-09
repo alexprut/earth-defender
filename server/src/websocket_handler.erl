@@ -26,12 +26,17 @@ websocket_handle({text, Msg}, State) ->
         "game_reconnect" ->
           [Room_id, Player_id, Ship_id] = Data,
           Room_pid = global_rooms_state:get_room_pid(Room_id),
-          Player_pid = room:get_player_pid(Room_pid, Player_id),
-          Player_pid ! {websocket, self()},
-          Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
-          New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
-          self() ! {servers_list, global_rooms_state:get_servers_list()},
-          reply([<<"game_reconnect">>], New_state);
+          case Room_id of
+            error ->
+              reply([<<"server_error">>], State);
+            _ ->
+              Player_pid = room:get_player_pid(Room_pid, Player_id),
+              Player_pid ! {websocket, self()},
+              Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
+              New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
+              self() ! {servers_list, global_rooms_state:get_servers_list()},
+              reply([<<"game_reconnect">>], New_state)
+           end;
         "rooms_list" ->
           self() ! {servers_list, global_rooms_state:get_servers_list()},
           reply([<<"rooms_list">>, global_rooms_state:get_rooms_list()], State);
