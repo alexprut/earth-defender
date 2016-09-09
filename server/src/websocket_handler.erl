@@ -29,23 +29,23 @@ websocket_handle({text, Msg}, State) ->
             _ ->
               Player_pid = room:get_player_pid(Room_pid, Player_id),
               Player_pid ! {websocket, self()},
-              Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
+              Room_pid ! {player_reconnect, Player_pid},
               New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
               self() ! {servers_list, global_rooms_state:get_servers_list()},
               reply([<<"game_reconnect">>], New_state)
-           end;
+          end;
         "rooms_list" ->
           self() ! {servers_list, global_rooms_state:get_servers_list()},
           reply([<<"rooms_list">>, global_rooms_state:get_rooms_list()], State);
         "room_join" ->
-          [Room_id,Ship_id] = Data,
+          [Room_id, Ship_id] = Data,
           Room_pid = global_rooms_state:get_room_pid(Room_id),
           Player_id = utils:generate_uuid(),
           Player_pid = player:start(self(), Player_id, Ship_id),
           self() ! {player_id, Player_id},
           Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
           New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
-          global_rooms_state:init_broadcast_slaves({binary_to_list(Event), {Room_id, Player_id}}),
+          global_rooms_state:init_broadcast_slaves({binary_to_list(Event), {Room_id, Player_id, Ship_id}}),
           reply([<<"room_id">>, Room_id], New_state);
         "room_add" ->
           Ship_id = Data,
@@ -58,11 +58,11 @@ websocket_handle({text, Msg}, State) ->
           self() ! {player_id, Player_id},
           Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
           New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid, ship_id = Ship_id},
-          global_rooms_state:init_broadcast_slaves({binary_to_list(Event), {Room_id, Player_id}}),
+          global_rooms_state:init_broadcast_slaves({binary_to_list(Event), {Room_id, Player_id, Ship_id}}),
           reply([<<"room_id">>, Room_id], New_state);
         "action_earth_collision" ->
           State#state.room_pid ! {action_earth_collision, State#state.player_id},
-          global_rooms_state:init_broadcast_slaves({binary_to_list(Event), {State#state.room_id, State#state.player_id, Data}}),
+          global_rooms_state:init_broadcast_slaves({binary_to_list(Event), {State#state.room_id, State#state.player_id}}),
           reply_ok(State);
         "game_master_asteroids_position" ->
           State#state.room_pid ! {game_master_asteroids_position, Data},
