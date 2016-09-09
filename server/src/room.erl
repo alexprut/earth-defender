@@ -32,30 +32,30 @@ handle_call(_Request, _From, State) ->
 handle_info(Data, State) ->
   case Data of
     {broadcast_players, Msg} ->
-      lists:flatmap(fun({_, Player_pid}) -> Player_pid ! Msg, [] end, State#room_state.players),
+      lists:flatmap(fun({_, Player_pid, _}) -> Player_pid ! Msg, [] end, State#room_state.players),
       {noreply, State};
     {room_id, Room_id} ->
       {noreply, State#room_state{id = Room_id}};
     {player_remove, Player_id} ->
-      New_Ship_Positions = remove_ship_from_list(State#room_state.ships_position, get_ship_id(State#room_state.players, Player_id)),
-      New_State = State#room_state{players = player_remove(State#room_state.players, Player_id), ships_position = New_Ship_Positions},
+      New_ship_positions = remove_ship_from_list(State#room_state.ships_position, get_ship_id(State#room_state.players, Player_id)),
+      New_state = State#room_state{players = player_remove(State#room_state.players, Player_id), ships_position = New_ship_positions},
       if
-        length(New_State#room_state.players) == 0 ->
+        length(New_state#room_state.players) == 0 ->
           global_rooms_state ! {room_remove, State#room_state.id};
         true ->
-          broadcast(New_State#room_state.players, room_players_number, length(New_State#room_state.players))
+          broadcast(New_state#room_state.players, room_players_number, length(New_state#room_state.players))
       end,
-      {noreply, New_State};
+      {noreply, New_state};
     {player_add, {Player_id, Player_pid, Ship_id}} ->
-      New_State = State#room_state{players = [{Player_id, Player_pid, Ship_id} | State#room_state.players]},
-      Player_pid ! {game_life, New_State#room_state.life},
-      broadcast(New_State#room_state.players, room_players_number, length(New_State#room_state.players)),
+      New_state = State#room_state{players = [{Player_id, Player_pid, Ship_id} | State#room_state.players]},
+      Player_pid ! {game_life, New_state#room_state.life},
+      broadcast(New_state#room_state.players, room_players_number, length(New_state#room_state.players)),
       if
-        length(New_State#room_state.players) > 1 ->
+        length(New_state#room_state.players) > 1 ->
           broadcast([lists:last(State#room_state.players)], asteroid_position, []);
         true -> ok
       end,
-      {noreply, New_State};
+      {noreply, New_state};
     {action_earth_collision, PlayerId} ->
       [{Pid, _, _} | _] = State#room_state.players,
       if
@@ -66,22 +66,22 @@ handle_info(Data, State) ->
         New_life >= 0 -> New_life;
         New_life -> New_life = 0
       end,
-      New_State = State#room_state{life = New_life},
+      New_state = State#room_state{life = New_life},
       broadcast(State#room_state.players, game_life, New_life),
-      {noreply, New_State};
+      {noreply, New_state};
     {game_master_asteroids_position, Position} ->
-      New_State = State#room_state{asteroids_position = Position},
+      New_state = State#room_state{asteroids_position = Position},
       broadcast(State#room_state.players, asteroid_position_set, Position),
-      {noreply, New_State};
+      {noreply, New_state};
     {ship_position, Position_ship} ->
       Position_list = [Position_ship | State#room_state.ships_position],
-      New_State = State#room_state{ships_position = Position_list},
+      New_state = State#room_state{ships_position = Position_list},
       broadcast(State#room_state.players, ship_position_set, Position_list),
-      {noreply, New_State};
+      {noreply, New_state};
     {ship_move, [Ship_id, Direction]} ->
-      New_State = State#room_state{ships_position = update_position(State#room_state.ships_position, Ship_id, Direction)},
-      broadcast(State#room_state.players, ship_position_set, New_State#room_state.ships_position),
-      {noreply, New_State};
+      New_state = State#room_state{ships_position = update_position(State#room_state.ships_position, Ship_id, Direction)},
+      broadcast(State#room_state.players, ship_position_set, New_state#room_state.ships_position),
+      {noreply, New_state};
     {ship_shoot, Ship_id} ->
       broadcast(State#room_state.players, ship_shoot, Ship_id),
       {noreply, State};
@@ -104,10 +104,10 @@ update_position([[Ship_id, X, Y, Z] | XS], Ship_id, Direction) ->
 update_position([X | XS], Ship_id, Direction) -> lists:append([X], update_position(XS, Ship_id, Direction));
 update_position([], _, _) -> [].
 
-get_ship_id([{Player_id, Player_pid, Ship_id} | XS] , Player_id) ->
+get_ship_id([{Player_id, _Player_pid, Ship_id} | _XS], Player_id) ->
   Ship_id;
-get_ship_id([X | XS], Player_id) -> get_ship_id (XS, Player_id);
-get_ship_id([], Player_id) -> error.
+get_ship_id([X | XS], Player_id) -> get_ship_id(XS, Player_id);
+get_ship_id([], _Player_id) -> error.
 
 
 player_remove([{Player_id, Player_pid, Ship_id} | XS], Player_id) ->
@@ -122,9 +122,9 @@ remove_ship_from_list([[Ship_id, _, _, _] | XS], Ship_id) ->
 remove_ship_from_list([X | XS], Ship_id) -> lists:append([X], remove_ship_from_list(XS, Ship_id));
 remove_ship_from_list([], _) -> [].
 
-find_player_pid([{Player_id, Player_pid} | _], Player_id) ->
+find_player_pid([{Player_id, Player_pid, _} | _], Player_id) ->
   Player_pid;
-find_player_pid([{_, _} | Players], Player_id) ->
+find_player_pid([{_, _, _} | Players], Player_id) ->
   find_player_pid(Players, Player_id);
 find_player_pid([], Player_id) ->
   utils:log("Warning: there is no such a player with id: ~p~n", [Player_id]),
@@ -146,9 +146,14 @@ handle_cast(_Request, _State) ->
     {set_state, New_state} ->
       utils:log("Updating room state to: ~n~p~n", [New_state]),
       Players = lists:flatmap(
-        fun({Player_id, _}) ->
-          [{Player_id, player:start(whereis(slave_handler), Player_id)}] end,
-          New_state#room_state.players
+        fun({Player_id, _, Ship_id}) ->
+          [{
+            Player_id,
+            player:start(whereis(slave_handler), Player_id, Ship_id),
+            Ship_id
+          }]
+        end,
+        New_state#room_state.players
       ),
       {noreply, New_state#room_state{players = Players}}
   end.
