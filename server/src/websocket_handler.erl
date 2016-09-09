@@ -6,9 +6,12 @@
 -export([websocket_info/2]).
 -export([terminate/3]).
 
--record(state, {player_id = undef, room_id = undef, room_pid = undef, player_pid = undef}).
+-define(WSKey,{pubsub,wsbroadcast}).
+
+-record(state, {player_id = undef, room_id = undef, room_pid = undef, player_pid = undef, ship_id = undef}).
 
 init(Req, _Opts) ->
+  gproc:reg({p, l, ?WSKey}),
   {cowboy_websocket, Req, #state{}, ?WEBSOCKET_TIMEOUT}.
 
 % Receive/External message Handler
@@ -21,11 +24,11 @@ websocket_handle({text, Msg}, State) ->
     true ->
       case binary_to_list(Event) of
         "game_reconnect" ->
-          [Room_id, Player_id] = Data,
+          [Room_id, Player_id, Ship_id] = Data,
           Room_pid = global_rooms_state:get_room_pid(Room_id),
           Player_pid = room:get_player_pid(Room_pid, Player_id),
           Player_pid ! {websocket, self()},
-          Room_pid ! {player_add, {Player_id, Player_pid}},
+          Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
           New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
           self() ! {servers_list, global_rooms_state:get_servers_list()},
           reply([<<"game_reconnect">>], New_state);
@@ -33,25 +36,26 @@ websocket_handle({text, Msg}, State) ->
           self() ! {servers_list, global_rooms_state:get_servers_list()},
           reply([<<"rooms_list">>, global_rooms_state:get_rooms_list()], State);
         "room_join" ->
-          Room_id = Data,
+          [Room_id,Ship_id] = Data,
           Room_pid = global_rooms_state:get_room_pid(Room_id),
           Player_id = utils:generate_uuid(),
-          Player_pid = player:start(self(), Player_id),
+          Player_pid = player:start(self(), Player_id, Ship_id),
           self() ! {player_id, Player_id},
-          Room_pid ! {player_add, {Player_id, Player_pid}},
+          Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
           New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
           global_rooms_state:init_broadcast_slaves({binary_to_list(Event), {Room_id, Player_id}}),
           reply([<<"room_id">>, Room_id], New_state);
         "room_add" ->
+          Ship_id = Data,
           Room_id = utils:generate_uuid(),
           {_, Room_pid} = room:start_link(Room_id),
           utils:log("Room id:~n~p~n", [Room_id]),
           global_rooms_state:add_room(Room_id, Room_pid),
           Player_id = utils:generate_uuid(),
-          Player_pid = player:start(self(), Player_id),
+          Player_pid = player:start(self(), Player_id, Ship_id),
           self() ! {player_id, Player_id},
-          Room_pid ! {player_add, {Player_id, Player_pid}},
-          New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
+          Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
+          New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid, ship_id = Ship_id},
           global_rooms_state:init_broadcast_slaves({binary_to_list(Event), {Room_id, Player_id}}),
           reply([<<"room_id">>, Room_id], New_state);
         "action_earth_collision" ->
@@ -98,12 +102,15 @@ websocket_info({Event, Data}, State) ->
       reply([<<"game_life">>, Data], State);
     asteroid_position ->
       reply([<<"asteroid_position">>, Data], State);
+      %gproc:send({p, l, ?WSKey}, {self(), ?WSKey, [<<"asteroid_position">>, Data]});
     asteroid_position_set ->
       reply([<<"asteroid_position_set">>, Data], State);
     ship_position_set ->
       reply([<<"ship_position_set">>, Data], State);
     ship_shoot ->
       reply([<<"ship_shoot">>, Data], State);
+    remove_ship_scene ->
+      reply([<<"remove_ship_scene">>, Data], State);
     servers_list ->
       reply([<<"servers_list">>, Data], State);
     Unknown ->
