@@ -22,6 +22,7 @@ server/.erlang.mk/
 server/erlang.mk
 server/earth_defender.d
 server/websocket.d
+*.dump
 
 // LaTeX
 documentation/*.aux
