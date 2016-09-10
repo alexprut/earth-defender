@@ -2,9 +2,18 @@
 
 -include("config.hrl").
 
+%% External exports
 -export([generate_uuid/0, get_initial_role/0, get_master_name/0, get_port/0, get_service_url/0, log/2]).
 
-%% FIXME the UUID is not distributed and unique
+%% Internal exports
+-export([]).
+
+%%% ---------------------------------------------------
+%%%
+%%% Utilities functions.
+%%%
+%%% ---------------------------------------------------
+
 generate_uuid() ->
   erlang:list_to_bitstring(
     erlang:ref_to_list(

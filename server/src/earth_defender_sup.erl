@@ -1,25 +1,27 @@
-%% @private
 -module(earth_defender_sup).
+
 -behaviour(supervisor).
 
-%% API.
+%% External exports
 -export([start_link/0]).
 
-%% supervisor.
+%% Internal exports
 -export([init/1]).
 
-%% API.
+%%% ---------------------------------------------------
+%%%
+%%% Supervisor.
+%%%
+%%% ---------------------------------------------------
 
 start_link() ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-%% supervisor.
-
 init(_Args) ->
   Procs = [
     {
-      global_rooms_state,
-      {global_rooms_state, start_link, []},
+      local_rooms_state,
+      {local_rooms_state, start_link, []},
       permanent,
       infinity,
       worker,

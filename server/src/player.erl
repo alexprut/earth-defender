@@ -1,8 +1,18 @@
 -module(player).
 
--export([start/3, loop/1, terminate/1]).
+%% External exports
+-export([start/3, terminate/1]).
+
+%% Internal exports
+-export([loop/1]).
 
 -record(state, {id, ship_id, websocket}).
+
+%%% ---------------------------------------------------
+%%%
+%%% Player.
+%%%
+%%% ---------------------------------------------------
 
 start(Websocket, Id, Ship_id) ->
   spawn(player, loop, [#state{websocket = Websocket, id = Id, ship_id = Ship_id}]).

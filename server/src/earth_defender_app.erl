@@ -1,14 +1,21 @@
-%% @private
 -module(earth_defender_app).
+
 -behaviour(application).
 
-%% API.
--export([start/2]).
--export([stop/1]).
+%% External exports
+-export([]).
+
+%% Internal exports
+-export([start/2, stop/1]).
 
 -include("config.hrl").
 
-%% API.
+%%% ---------------------------------------------------
+%%%
+%%% Application.
+%%%
+%%% ---------------------------------------------------
+
 start(_Type, _Args) ->
   Dispatch = cowboy_router:compile([
     {'_', [{"/websocket/", websocket_handler, []}]}
