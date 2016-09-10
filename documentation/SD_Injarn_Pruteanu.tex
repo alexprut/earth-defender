@@ -295,7 +295,7 @@ Come nel caso precedente, anche la risposta al client è della forma \texttt{[ev
 
 In caso di fallimento del presente modulo, viene invece invocata la funzione \texttt{terminate/3}, la quale si occupa principalmente, oltre che fornire la causa dell'interruzione, di rimuovere dalla \texttt{room} il player che ha causato il fallimento.
 \subsubsection{slave\_handler}
-Il presente modulo funge da 
+Il presente modulo si occupa, come suggerisce il nome, della gestione delle repliche del server master.
 \subsubsection{Moduli Erlang gestione logica di gioco e scambio messaggi}
 I restanti 4 moduli servono principalmente a gestire la logica del gioco e quindi mantenere uno scambio messaggio consistente. Come si può osservare in figura \ref{ServerArc}, lo scambio messaggi avviene solo ed esclusivamente tra i moduli stessi e \texttt{websocket\_handler} (eccezion fatta per \texttt{config}), questi messaggi, come precedentemente affermato, una volta inoltrati al modulo \texttt{websocket\_handler} vengono passati direttamente alla funzione \texttt{websocket\_info/3} per poi, eventualmente, arrivare al client.
 \begin{itemize}
@@ -436,4 +436,7 @@ Terminata l'operazione da parte del server, \texttt{websocket\_handler} risponde
 \section{Utente finale}
 \newpage
 \section{Installazione  e avvio applicazione}
+
+\bibliographystyle{plain}
+\bibliography{Bib}
 \end{document}
