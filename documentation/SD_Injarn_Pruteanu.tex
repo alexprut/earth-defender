@@ -76,59 +76,12 @@ Permettere a uno o più utenti di poter comandare una nave spaziale al fine di d
 \item
 \end{enumerate}
 
-
-\subsection{Casi d'uso}
-Sotto in figura ? sono illustrati i casi d'uso più rilevanti, le interface utente e il
-diagramma di flusso dei messaggi che vengono scambiato fra il client e il server.
-
-
-\subsubsection{Multiplayer, creazione di una nuova room}
-
-Sotto sono in figura ? viene illustrato l'interfaccia utente:
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\textwidth]{MultiplayerCreateRoomUC}
-\caption{Create Room in modalità Multiplayer}
-\label{CreateRoomUC}
-\end{figure}
-
-Sotto in figura ? si possono vedere i messaggi scambiati fra il client e il server:
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\textwidth]{MultiplayerCreateRoom}
-\caption{Create Room in modalità Multiplayer}
-\label{CreateRoom}
-\end{figure}
-
-
-\subsubsection{Multiplayer, entrata in una room}
-Sotto sono in figura ? viene illustrato l'interfaccia utente:
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\textwidth]{MultiplayerJoinRoomUC}
-\caption{Create Room in modalità Multiplayer}
-\label{CreateRoomUC}
-\end{figure}
-
-Sotto in figura ? si possono vedere i messaggi scambiati fra il client e il server:
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\textwidth]{MultiplayerJoinRoom}
-\caption{Create Room in modalità Multiplayer}
-\label{CreateRoom}
-\end{figure}
-
 \section{Architettura e Design}
 \textcolor{red}{DA INTEGRARE CON QUANTO GIA' PRESENTE SU GIT}
 
-In figura \ref{GenArc} è possibile osservare lo schema dell'architettura generale del sistema implementato. Le componenti principali che andremo poi a descrivere sono rappresentate dal client e dal server. Come si osserva, tra questi due vi è un canale full-duplex rappresentato, nel nostro caso, da una connessione TCP (protocollo WebSocket). E' possibile inoltre osservare che i client non comunicano tra di loro in maniera diretta ma attraverso i server, i quali invece comunicano tra loro al fine di replicare le informazioni (i vari stati di gioco), distribuire il carico di lavoro (permettendo quindi una maggiore scalabilità) e garantire una certa disponibilità.
+In figura \ref{GenArc} è possibile osservare lo schema dell'architettura generale del sistema implementato. Le componenti principali che andremo poi a descrivere sono rappresentate dal client e dal server. Come si osserva, tra questi due vi è un canale full-duplex rappresentato, nel nostro caso, da una connessione TCP (protocollo WebSocket). E' possibile inoltre osservare che i client non comunicano tra di loro in maniera diretta ma attraverso il server master (in figura \ref{Master-Slave} è possibile osservare l'architettura \textit{master-slave} implementata). Master e Slave invece comunicano tra loro al fine di replicare le informazioni (i vari stati di gioco) e garantire una certa disponibilità.
 
-Per permettere la modalità di gioco multiplayer viene utilizzato il protocollo WebSocket,
-questo perchè il gioco viene eseguito all'interno del browser, il protocollo WebSocket
+Per permettere la modalità di gioco multiplayer viene utilizzato il protocollo WebSocket, questo perchè il gioco viene eseguito all'interno del browser, il protocollo WebSocket
 funziona sopra HTTP con communicazione assincorna che posono avvenire concorrente.
 Siccome il browser non può ricevere una connessione, ma solo inizializzarla, connessione
 fra più client (p2p) non è possibile (attualmente un nuovo protocollo WebRTC si sta
@@ -136,7 +89,7 @@ diffondendo per appunto permettere architetture di tipo p2p, purtroppo è una te
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{GeneralArchitecture}
+\includegraphics[width=10cm]{GeneralArchitecture}
 \caption{Architettura generale del sistema}
 \label{GenArc}
 \end{figure}
@@ -219,7 +172,7 @@ In figura \ref{ServerArc} possiamo invece osservare l'architettura che è stata 
 \label{ServerArc}
 \end{figure}
 
-Il server è interamente scritto in Erlang e la libreria principale utilizzata, oltre Cowboy è \href{https://github.com/davisp/jiffy}{Jiffi}. Il progetto è stato diviso in più moduli di cui tre in particolare per la gestione della \textit{websocket} ed uno per la gestione delle repliche (o slave) di seguito descritti.
+Il server è interamente scritto in Erlang e la libreria principale utilizzata, oltre Cowboy è \href{https://github.com/davisp/jiffy}{Jiffi}. Il progetto è stato diviso in più moduli di cui tre in particolare per la gestione della \textit{websocket}, uno per la gestione delle repliche (o slave) e altri per la gestione della logica di gioco; i moduli vengono di seguito descritti.
 \subsubsection{earth\_defender\_app}
 Il modulo \texttt{earth\_defender\_app} è responsabile della configurazione e dell'avvio del processo server (nel nostro caso un server Cowboy). Il modulo risponde con la configurazione in \texttt{config.hrl} che contiene il nome dell'host, la porta e un timeout.
 Di seguito è possibile osservare la parte di codice dove viene indicato di avviare un server in ascolto sulla porta specificata in fase di creazione della websocket \texttt{>make [...] -port 8888} con protocollo \texttt{http} e inoltrare le richieste al modulo \texttt{websocket\_handler}.
@@ -313,8 +266,33 @@ Come nel caso precedente, anche la risposta al client è della forma \texttt{[ev
 In caso di fallimento del presente modulo, viene invece invocata la funzione \texttt{terminate/3}, la quale si occupa principalmente, oltre che fornire la causa dell'interruzione, di rimuovere dalla \texttt{room} il player che ha causato il fallimento.
 \subsubsection{slave\_handler}
 Il presente modulo si occupa, come suggerisce il nome, della gestione delle repliche del server master.
-\subsubsection{Moduli Erlang gestione logica di gioco e scambio messaggi}
-I restanti 4 moduli servono principalmente a gestire la logica del gioco e quindi mantenere uno scambio messaggio consistente. Come si può osservare in figura \ref{ServerArc}, lo scambio messaggi avviene solo ed esclusivamente tra i moduli stessi e \texttt{websocket\_handler} (eccezion fatta per \texttt{config}), questi messaggi, come precedentemente affermato, una volta inoltrati al modulo \texttt{websocket\_handler} vengono passati direttamente alla funzione \texttt{websocket\_info/3} per poi, eventualmente, arrivare al client.
+
+Gli slave (o repliche) possono essere aggiunti in qualsiasi momento dopo l'avvio del master.
+Alla prima fase di avvio, queste, contattano il master, il quale si occupa di trasferire l'intero stato del gioco al momento della richiesta (eventuali nuovi aggiornamenti dello stato vengono trasmessi in coda a quest'ultimo messaggio per poi essere successivamente elaborati dalla replica, ottenendo pertanto uno stato consistente).
+
+Dopo la prima fase di sincronizzazione tra il master e lo slave, tutti i messaggi che vengono inoltrati dal client passano poi dal master a tutti gli slaves collegati. E' importante notare che i client contattano sempre solo ed esclusivamente il master pur disponendo degli indirizzi di tutti gli slave (questi ultimi vengono comunicati ad ogni client dal master).
+
+La scelta progettuale fatta in questa fase, potrebbe, giustamente, indurre il lettore a pensare che una soluzione sicuramente più scalabile sarebbe stata quella di suddividere il carico di lavoro del master sulle varie repliche (e quindi, vista l'architettura proposta, tanti master tra loro sincronizzati), tuttavia, trattandosi di un gioco in tempo reale (e vista comunque la non perfetta sincronizzazione di tutti i client) è stato ritenuto opportuno indirizzare tutte le richieste ad una sola "macchina" che funge da master (nel caso specifico anche da arbitro) in modo da permettere a tutti i client di vedere sempre lo stesso stato globale del sistema.
+
+
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{Master-Slave}
+\caption{Architettura Master-Slaves implementata}
+\label{Master-Slave}
+\end{figure}
+
+In figura \ref{Scaled-Master-Slave} viene proposta una possibile soluzione scalabile di quanto implementato: l'idea consiste nel permettere ad un client, nella prima fase di connessione, di scegliere il server master a cui collegarsi tra quelli eventualmente proposti (si ricorda che deve essere sempre presente almeno un master).
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{Scaled_Master-Slave}
+\caption{Architettura Masters-Slaves scalare}
+\label{Scaled-Master-Slave}
+\end{figure}
+\subsubsection{Moduli Erlang per la gestione della logica di gioco e lo scambio di messaggi}
+I restanti moduli servono principalmente a gestire la logica del gioco e quindi mantenere uno scambio messaggio consistente. Come si può osservare in figura \ref{ServerArc}, lo scambio messaggi avviene solo ed esclusivamente tra i moduli stessi e \texttt{websocket\_handler} (eccezion fatta per \texttt{config}), questi messaggi, come precedentemente affermato, una volta inoltrati al modulo \texttt{websocket\_handler} vengono passati direttamente alla funzione \texttt{websocket\_info/2} per poi, eventualmente, arrivare al client.
 \begin{itemize}
 \item \texttt{config}: modulo di configurazione iniziale dei parametri del gioco
 \item \texttt{global\_room\_state}: modulo che contiene lo stato globale del gioco, in particolare la lista di tutte le eventuali \textit{room} attive. Nella sezione successiva verrà descritto dettagliatamente come avvengono le operazioni di creazione e join nella \textit{room}, per ora è sufficiente sapere che ogni player può fare parte di una e una sola \textit{room} e possono esistere più \texttt{room} (almeno una) in modo quindi da permettere il multicast dei messaggi (visto a livello di stato globale) oppure broadcast (visto a livello di singola room).
@@ -322,6 +300,7 @@ I restanti 4 moduli servono principalmente a gestire la logica del gioco e quind
 Il modulo \texttt{websocket\_handler} si occupa di inviare messaggi Erlang al modulo descritto che resta in ascolto con \texttt{handle\_info/2} ed \texttt{handle\_call/3} ed in caso di matching esegue le operazioni indicate (si rimanda alla visione del codice per maggiori dettagli).
 
 In generale, il modulo \texttt{global\_rooms\_state} si occupa di creare/eliminare le room di gioco, di aggiungere/rimuovere i player che ne fanno richiesta nella varie room e di smistare i messaggi a queste ultime e/o direttamente ai player, in funzione dell'operazione da eseguire.
+
 
 Si può osservare inoltre che tale modulo contiene avvia \texttt{gen\_server}:
 \begin{lstlisting}[basicstyle=\footnotesize]
