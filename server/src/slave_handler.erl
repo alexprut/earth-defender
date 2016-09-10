@@ -5,9 +5,7 @@
 -include("room_state.hrl").
 
 %% External exports
--export([
-  start_link/1, connect_to_master/1, set_state/2, get_master_data/0
-]).
+-export([start_link/1, connect_to_master/1, get_master_data/0]).
 
 %% Internal exports
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -20,8 +18,8 @@
 %%%
 %%% ---------------------------------------------------
 
-start_link({Master_name, Master_pid, Master_service_url}) ->
-  gen_server:start_link({local, ?MODULE}, ?MODULE, {Master_name, Master_pid, Master_service_url}, []).
+start_link(Arg) ->
+  gen_server:start_link({local, ?MODULE}, ?MODULE, Arg, []).
 
 init({Master_name, Master_pid, Master_service_url}) ->
   {ok, #state{master_pid = Master_pid, master_name = Master_name, master_service_url = Master_service_url}}.
@@ -131,7 +129,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 %%% ---------------------------------------------------
 %%%
-%%% Utilities functions.
+%%% gen_server calls: utilities functions.
 %%%
 %%% ---------------------------------------------------
 
@@ -150,6 +148,12 @@ add_rooms([State | Rooms]) ->
   local_rooms_state:add_room(State#room_state.id, Room_pid);
 add_rooms([]) ->
   ok.
+
+%%% ---------------------------------------------------
+%%%
+%%% Utilities functions.
+%%%
+%%% ---------------------------------------------------
 
 connect_to_master(Master_name) ->
   utils:log("Request from slave to connect to master: ~n~p~n", [Master_name]),

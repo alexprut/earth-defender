@@ -25,27 +25,33 @@ websocket_handle({text, Msg}, State) ->
   % The receiving message Msg is of type <<"[\"event\",data]">>
   utils:log("Receiving message:~n~p~n", [jiffy:decode(Msg)]),
   [Event, Data] = jiffy:decode(Msg),
+  Event_decoded = binary_to_list(Event),
   case local_rooms_state:is_master() of
     true ->
-      case binary_to_list(Event) of
+      case Event_decoded of
         "game_reconnect" ->
           [Room_id, Player_id, _Ship_id] = Data,
           Room_pid = local_rooms_state:get_room_pid(Room_id),
           case Room_id of
             error ->
-              reply([<<"server_error">>], State);
+              reply([<<"server_error">>, "There is no such a room"], State);
             _ ->
               Player_pid = room:get_player_pid(Room_pid, Player_id),
-              Player_pid ! {websocket, self()},
-              Room_pid ! {player_reconnect, Player_pid},
-              New_state = State#state{
-                player_id = Player_id,
-                room_id = Room_id,
-                player_pid = Player_pid,
-                room_pid = Room_pid
-              },
-              self() ! {servers_list, local_rooms_state:get_servers_list()},
-              reply([<<"game_reconnect">>], New_state)
+              case Player_pid of
+                error ->
+                  reply([<<"server_error">>, "There is no such a player"], State);
+                _ ->
+                  Player_pid ! {websocket, self()},
+                  Room_pid ! {player_reconnect, Player_pid},
+                  New_state = State#state{
+                    player_id = Player_id,
+                    room_id = Room_id,
+                    player_pid = Player_pid,
+                    room_pid = Room_pid
+                  },
+                  self() ! {servers_list, local_rooms_state:get_servers_list()},
+                  reply([<<"game_reconnect">>], New_state)
+              end
           end;
         "rooms_list" ->
           self() ! {servers_list, local_rooms_state:get_servers_list()},
@@ -63,8 +69,8 @@ websocket_handle({text, Msg}, State) ->
             player_pid = Player_pid,
             room_pid = Room_pid
           },
-          local_rooms_state:init_broadcast_slaves({
-            binary_to_list(Event),
+          local_rooms_state:broadcast_slaves({
+            Event_decoded,
             {Room_id, Player_id, Ship_id}
           }),
           reply([<<"room_id">>, Room_id], New_state);
@@ -85,43 +91,43 @@ websocket_handle({text, Msg}, State) ->
             room_pid = Room_pid,
             ship_id = Ship_id
           },
-          local_rooms_state:init_broadcast_slaves({
-            binary_to_list(Event),
+          local_rooms_state:broadcast_slaves({
+            Event_decoded,
             {Room_id, Player_id, Ship_id}
           }),
           reply([<<"room_id">>, Room_id], New_state);
         "action_earth_collision" ->
           State#state.room_pid ! {action_earth_collision, State#state.player_id},
-          local_rooms_state:init_broadcast_slaves({
-            binary_to_list(Event),
+          local_rooms_state:broadcast_slaves({
+            Event_decoded,
             {State#state.room_id, State#state.player_id}
           }),
           reply_ok(State);
         "game_master_asteroids_position" ->
           State#state.room_pid ! {game_master_asteroids_position, Data},
-          local_rooms_state:init_broadcast_slaves({
-            binary_to_list(Event),
+          local_rooms_state:broadcast_slaves({
+            Event_decoded,
             {State#state.room_id, Data}
           }),
           reply_ok(State);
         "game_ship_position" ->
           State#state.room_pid ! {ship_position, Data},
-          local_rooms_state:init_broadcast_slaves({
-            binary_to_list(Event),
+          local_rooms_state:broadcast_slaves({
+            Event_decoded,
             {State#state.room_id, Data}
           }),
           reply_ok(State);
         "action_ship_move" ->
           State#state.room_pid ! {ship_move, Data},
-          local_rooms_state:init_broadcast_slaves({
-            binary_to_list(Event),
+          local_rooms_state:broadcast_slaves({
+            Event_decoded,
             {State#state.room_id, Data}
           }),
           reply_ok(State);
         "action_ship_shoot" ->
           State#state.room_pid ! {ship_shoot, Data},
-          local_rooms_state:init_broadcast_slaves({
-            binary_to_list(Event),
+          local_rooms_state:broadcast_slaves({
+            Event_decoded,
             {State#state.room_id, Data}
           }),
           reply_ok(State);

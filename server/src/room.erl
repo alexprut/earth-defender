@@ -6,7 +6,7 @@
 -include("room_state.hrl").
 
 %% External exports
--export([start_link/1, find_player_pid/2, get_player_pid/2, create_state_snapshot/1, set_state/2]).
+-export([start_link/1, get_player_pid/2, create_state_snapshot/1, set_state/2]).
 
 %% Internal exports
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -71,19 +71,21 @@ handle_info(Data, State) ->
     {room_id, Room_id} ->
       {noreply, State#room_state{id = Room_id}};
     {player_remove, Player_id} ->
+      Ship_id = find_ship_id(State#room_state.players, Player_id),
       New_ship_positions = remove_ship_from_list(
         State#room_state.ships_position,
-        get_ship_id(State#room_state.players, Player_id)
+        Ship_id
       ),
       New_state = State#room_state{
-        players = player_remove(State#room_state.players, Player_id),
+        players = remove_player(State#room_state.players, Player_id),
         ships_position = New_ship_positions
       },
       if
         length(New_state#room_state.players) == 0 ->
           local_rooms_state ! {room_remove, State#room_state.id};
         true ->
-          broadcast(New_state#room_state.players, room_players_number, length(New_state#room_state.players))
+          broadcast(New_state#room_state.players, room_players_number, length(New_state#room_state.players)),
+          broadcast(New_state#room_state.players, remove_ship_scene, Ship_id)
       end,
       {noreply, New_state};
     {player_reconnect, Player_pid} ->
@@ -157,6 +159,27 @@ code_change(_OldVsn, State, _Extra) ->
 
 %%% ---------------------------------------------------
 %%%
+%%% gen_server calls: utilities functions.
+%%%
+%%% ---------------------------------------------------
+
+get_player_pid(Room_pid, Player_id) ->
+  gen_server:call(Room_pid, {find_player_pid, Player_id}).
+
+create_state_snapshot(Room_pid) ->
+  utils:log("Creating local master snapshot of room with pid: ~p~n", [Room_pid]),
+  gen_server:call(Room_pid, create_state_snapshot).
+
+set_state(Room_pid, State) ->
+  gen_server:cast(Room_pid, {set_state, State}).
+
+broadcast([], _, _) -> ok;
+broadcast([{_, Player_pid, _} | XS], Event, Data) ->
+  Player_pid ! {Event, Data},
+  broadcast(XS, Event, Data).
+
+%%% ---------------------------------------------------
+%%%
 %%% Utilities functions.
 %%%
 %%% ---------------------------------------------------
@@ -176,19 +199,31 @@ update_position([], Ship_id, _) ->
   utils:log("Warning: there is no such a ship with ship_id: ~p~n", [Ship_id]),
   error.
 
-get_ship_id([{Player_id, _Player_pid, Ship_id} | _XS], Player_id) ->
-  Ship_id;
-get_ship_id([_ | XS], Player_id) -> get_ship_id(XS, Player_id);
-get_ship_id([], Player_id) ->
-  utils:log("Warning: there is no such a ship with player_id: ~p~n", [Player_id]),
-  error.
+find_player_pid(Players, Player_id) ->
+  Match = lists:keyfind(Player_id, 1, Players),
+  case Match of
+    {Player_id, Player_pid, _} ->
+      Player_pid;
+    _ ->
+      utils:log("Warning: there is no such a player with id: ~p~n", [Player_id]),
+      error
+  end.
 
-player_remove([{Player_id, Player_pid, Ship_id} | XS], Player_id) ->
-  broadcast(XS, remove_ship_scene, Ship_id),
+find_ship_id(Players, Player_id) ->
+  Match = lists:keyfind(Player_id, 1, Players),
+  case Match of
+    {Player_id, _, Ship_id} ->
+      Ship_id;
+    _ ->
+      utils:log("Warning: there is no such a ship with player_id: ~p~n", [Player_id]),
+      error
+  end.
+
+remove_player([{Player_id, Player_pid, _} | XS], Player_id) ->
   Player_pid ! stop,
   XS;
-player_remove([X | XS], Player_id) -> lists:append([X], player_remove(XS, Player_id));
-player_remove([], Player_id) ->
+remove_player([X | XS], Player_id) -> lists:append([X], remove_player(XS, Player_id));
+remove_player([], Player_id) ->
   utils:log("Warning: there is no such a player with id: ~p~n", [Player_id]),
   error.
 
@@ -198,26 +233,3 @@ remove_ship_from_list([X | XS], Ship_id) -> lists:append([X], remove_ship_from_l
 remove_ship_from_list([], Ship_id) ->
   utils:log("Warning: there is no such a ship with id: ~p~n", [Ship_id]),
   error.
-
-find_player_pid([{Player_id, Player_pid, _} | _], Player_id) ->
-  Player_pid;
-find_player_pid([{_, _, _} | Players], Player_id) ->
-  find_player_pid(Players, Player_id);
-find_player_pid([], Player_id) ->
-  utils:log("Warning: there is no such a player with id: ~p~n", [Player_id]),
-  error.
-
-get_player_pid(Room_pid, Player_id) ->
-  gen_server:call(Room_pid, {find_player_pid, Player_id}).
-
-broadcast([], _, _) -> ok;
-broadcast([{_, Player_pid, _} | XS], Event, Data) ->
-  Player_pid ! {Event, Data},
-  broadcast(XS, Event, Data).
-
-set_state(Room_pid, State) ->
-  gen_server:cast(Room_pid, {set_state, State}).
-
-create_state_snapshot(Room_pid) ->
-  utils:log("Creating local master snapshot of room with pid: ~p~n", [Room_pid]),
-  gen_server:call(Room_pid, create_state_snapshot).
