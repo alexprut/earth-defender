@@ -204,7 +204,7 @@ In figura \ref{ServerArc} possiamo invece osservare l'architettura che è stata 
 
 Il server è interamente scritto in Erlang e la libreria principale utilizzata, oltre Cowboy è \href{https://github.com/davisp/jiffy}{Jiffi}. Il progetto è stato diviso in più moduli di cui tre in particolare per la gestione della \textit{websocket} ed uno per la gestione delle repliche (o slave) di seguito descritti.
 \subsubsection{earth\_defender\_app}
-Il modulo \texttt{earth\_defender\_app} è responsabile della configurazione e dell'avvio del processo server (nel nostro caso un server Cowboy). Il modulo risponde con la configurazione in \texttt{config.hrl} che contiene il nome dell'host, la porta e un timeout.
+Il modulo \texttt{websocket\_app} è responsabile della configurazione e dell'avvio del processo server (nel nostro caso un server Cowboy). Il modulo risponde con la configurazione in \texttt{config.hrl} che contiene il nome dell'host, la porta e un timeout.
 Di seguito è possibile osservare la parte di codice dove viene indicato di avviare un server in ascolto sulla porta specificata in fase di creazione della websocket \texttt{>make [...] -port 8888} con protocollo \texttt{http} e inoltrare le richieste al modulo \texttt{websocket\_handler}.
 \begin{lstlisting}[basicstyle=\footnotesize]
 start(_Type, _Args) ->
@@ -217,13 +217,7 @@ start(_Type, _Args) ->
   earth_defender_sup:start_link().
 \end{lstlisting}
 \subsubsection{earth\_defender\_sup}
-\texttt{earth\_defender\_sup} funge da modulo supervisore (\texttt{one for one}), in particolare si occupa di riavviare eventuali singoli processi che terminano/falliscono (vedi figura \ref{Supervisor}).
-\begin{figure}
-\centering
-\includegraphics[width=8cm]{sup4}
-\caption{Supervisore one for one}
-\label{Supervisor}
-\end{figure}
+\texttt{earth\_defender\_sup} funge da modulo supervisore, in particolare si occupa di riavviare eventuali processi che terminano/falliscono.
 \begin{lstlisting}[basicstyle=\footnotesize]
 init(_Args) ->
   Procs = [
@@ -273,29 +267,27 @@ websocket_handle(_Data, State) ->
 \end{lstlisting}
 In particolare, come si può osservare dal codice sopra, se una istanza di \texttt{Msg} collima con una delle clausole del \texttt{case} allora viene eseguita l'operazione corrispondente altrimenti restituisce un \texttt{Warning}.
 
-%Si noti come per la rappresentazione esterna dei messaggi scambiati tra client e server siano stati utilizzati rispettivamente \href{http://www.json.org/}{\textit{JSON}}
-
 Il presente modulo si occupa anche di rispondere alle richieste inoltrate dai client qualora fosse possibile. La funzione preposta per lo scopo è \texttt{websocket\_info({Event, Data}, State)}.
 \begin{lstlisting}[basicstyle=\footnotesize]
+% Send/Internal message Handler
+% Server that send messages to the client
 websocket_info({Event, Data}, State) ->
   case Event of
     player_id ->
       reply([<<"player_id">>, Data], State);
     room_players_number ->
       reply([<<"room_players_number">>, Data], State);
-    .
-    .
-    .
+		.
+		.
+		.
     Unknown ->
-      utils:log("Warning: websocket_info can not handle event:~n~p~n", [Unknown]),
+      io:format("Warning: websocket_info can not handle event:~n~p~n", [Unknown]),
       reply_ok(State)
   end.
 \end{lstlisting}
-Come nel caso precedente, anche la risposta al client è della forma \texttt{[evento,dato]}. Come varrà descritto successivamente, \texttt{websocket\_info/2} viene invocata da Cowboy ogni qualvolta il modulo riceva un messaggio Erlang.
+Come nel caso precedente, anche la risposta al client è della forma \texttt{[evento,dato]}. Come varrà descritto successivamente, \texttt{websocket\_info/3} viene invocata da Cowboy ogni qualvolta il modulo riceva un messaggio Erlang.
 
-In caso di fallimento del presente modulo, viene invece invocata la funzione \texttt{terminate/3}, la quale si occupa principalmente, oltre che fornire la causa dell'interruzione, di rimuovere dalla \texttt{room} il player che ha causato il fallimento.
-\subsubsection{slave\_handler}
-Il presente modulo funge da 
+Nel caso di fallimento del presente modulo, viene invece invocata la funzione \texttt{terminate/3}, la quale si occupa principalmente, oltre che fornire la causa dell'interruzione di rimuovere dalla \texttt{room} il player che ha causato il fallimento.
 \subsubsection{Moduli Erlang gestione logica di gioco e scambio messaggi}
 I restanti 4 moduli servono principalmente a gestire la logica del gioco e quindi mantenere uno scambio messaggio consistente. Come si può osservare in figura \ref{ServerArc}, lo scambio messaggi avviene solo ed esclusivamente tra i moduli stessi e \texttt{websocket\_handler} (eccezion fatta per \texttt{config}), questi messaggi, come precedentemente affermato, una volta inoltrati al modulo \texttt{websocket\_handler} vengono passati direttamente alla funzione \texttt{websocket\_info/3} per poi, eventualmente, arrivare al client.
 \begin{itemize}
