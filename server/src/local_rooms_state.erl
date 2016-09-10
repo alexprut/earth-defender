@@ -4,8 +4,8 @@
 
 %% External exports
 -export([
-  start_link/0, get_room_pid/1, get_rooms_list/0, add_room/2, broadcast_slaves/2, init_broadcast_slaves/1,
-  get_servers_list/0, is_master/0, set_state_slaves/1, search_room_pid/2, find_room_pid/1, slave_remove/1,
+  start_link/0, get_room_pid/1, get_rooms_list/0, add_room/2, broadcast_slaves/2, broadcast_slaves/1,
+  get_servers_list/0, is_master/0, set_state_slaves/1, find_room_pid/1, remove_slave/1,
   broadcast_players/2
 ]).
 
@@ -39,7 +39,7 @@ init(_Args) ->
 handle_call(_Request, _From, State) ->
   case _Request of
     {find_room_pid, Room_id} ->
-      {reply, search_room_pid(Room_id, State#state.rooms), State};
+      {reply, find_room_pid(Room_id, State#state.rooms), State};
     is_master ->
       case State#state.role of
         master ->
@@ -57,7 +57,7 @@ handle_call(_Request, _From, State) ->
       {reply, Rooms_list, State};
     {get_room_pid, Room_id} ->
       utils:log("Searching room_pid of room id:~n~p~n", [Room_id]),
-      Room_pid = search_room_pid(Room_id, State#state.rooms),
+      Room_pid = find_room_pid(Room_id, State#state.rooms),
       {reply, Room_pid, State};
     servers_list ->
       Server_list = create_servers_list(State),
@@ -67,7 +67,7 @@ handle_call(_Request, _From, State) ->
       {reply, ok, State}
   end.
 
-% Asynchronous messages
+% Asynchronous messages, Slaves broadcast
 handle_cast({Event, Data}, State) ->
   utils:log("Broadcast to Slaves: ~p~n", [State#state.slaves]),
   broadcast_slaves(State#state.slaves, {Event, Data}),
@@ -83,7 +83,7 @@ handle_info(Data, State) ->
       New_state = State#state{slaves = State_slaves},
       {noreply, New_state};
     {slave_remove, Slave_pid} ->
-      New_state = State#state{slaves = slave_remove(State#state.slaves, Slave_pid)},
+      New_state = State#state{slaves = remove_slave(State#state.slaves, Slave_pid)},
       utils:log("Removed slave of pid. ~p~n", [Slave_pid]),
       broadcast_slaves(New_state#state.slaves, {set_state_slaves, New_state#state.slaves}),
       broadcast_players(
@@ -119,7 +119,7 @@ handle_info(Data, State) ->
           {noreply, State}
       end;
     {room_remove, Room_id} ->
-      New_state = State#state{rooms = room_remove(State#state.rooms, Room_id)},
+      New_state = State#state{rooms = remove_room(State#state.rooms, Room_id)},
       {noreply, New_state};
     {slave_connect, Slave_name, Service_url} ->
       utils:log("Master connects to slave: ~p~n", [Slave_name]),
@@ -164,7 +164,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 %%% ---------------------------------------------------
 %%%
-%%% Utilities functions.
+%%% gen_server calls: utilities functions.
 %%%
 %%% ---------------------------------------------------
 
@@ -177,33 +177,60 @@ get_room_pid(Room_id) ->
 get_rooms_list() ->
   gen_server:call(whereis(local_rooms_state), get_rooms_list).
 
-search_room_pid(Room_id, [{Room_id, Room_pid} | _]) -> Room_pid;
-search_room_pid(Room_id, [_ | XS]) -> search_room_pid(Room_id, XS);
-search_room_pid(Room_id, []) ->
-  utils:log("Warning: there is no such a room of id: ~p~n", [Room_id]),
-  error.
+find_room_pid(Room_id) ->
+  gen_server:call(whereis(local_rooms_state), {find_room_pid, Room_id}).
 
-slave_remove([{_, Slave_pid, _} | XS], Slave_pid) ->
-  XS;
-slave_remove([X | XS], Slave_pid) ->
-  lists:append([X], slave_remove(XS, Slave_pid));
-slave_remove([], Slave_pid) ->
-  utils:log("Warning: there is no such a 'slave' to be removed with pid. ~n", [Slave_pid]),
-  error.
-
-room_remove([{Room_id, Room_pid} | XS], Room_id) ->
-  Room_pid ! stop,
-  XS;
-room_remove([X | XS], Room_id) -> lists:append([X], room_remove(XS, Room_id));
-room_remove([], Room_id) ->
-  utils:log("Warning: there is no such a 'room' with id: ~p~n", [Room_id]),
-  error.
+broadcast_slaves(Data) ->
+  gen_server:cast(whereis(local_rooms_state), Data).
 
 broadcast_slaves([{_, Slave_pid, _} | Slaves], Data) ->
   gen_server:cast(Slave_pid, Data),
   broadcast_slaves(Slaves, Data);
 broadcast_slaves([], _) ->
   ok.
+
+get_servers_list() ->
+  gen_server:call(whereis(local_rooms_state), servers_list).
+
+is_master() ->
+  gen_server:call(whereis(local_rooms_state), is_master).
+
+set_state_slaves(State_slaves) ->
+  whereis(local_rooms_state) ! {set_state_slaves, State_slaves}.
+
+remove_slave(Slave_pid) ->
+  whereis(local_rooms_state) ! {slave_remove, Slave_pid}.
+
+%%% ---------------------------------------------------
+%%%
+%%% Utilities functions.
+%%%
+%%% ---------------------------------------------------
+
+find_room_pid(Room_id, [{Room_id, Room_pid} | _]) -> Room_pid;
+find_room_pid(Room_id, [_ | XS]) -> find_room_pid(Room_id, XS);
+find_room_pid(Room_id, []) ->
+  utils:log("Warning: there is no such a room of id: ~p~n", [Room_id]),
+  error.
+
+remove_slave([{_, Slave_pid, _} | XS], Slave_pid) ->
+  XS;
+remove_slave([X | XS], Slave_pid) ->
+  lists:append([X], remove_slave(XS, Slave_pid));
+remove_slave([], Slave_pid) ->
+  utils:log("Warning: there is no such a 'slave' to be removed with pid. ~n", [Slave_pid]),
+  error.
+
+remove_room([{Room_id, Room_pid} | XS], Room_id) ->
+  Room_pid ! stop,
+  XS;
+remove_room([X | XS], Room_id) -> lists:append([X], remove_room(XS, Room_id));
+remove_room([], Room_id) ->
+  utils:log("Warning: there is no such a 'room' with id: ~p~n", [Room_id]),
+  error.
+
+broadcast_players(Rooms, Msg) ->
+  lists:flatmap(fun({_, Room_pid}) -> Room_pid ! Msg, [] end, Rooms).
 
 create_servers_list(State) ->
   case State#state.role of
@@ -224,24 +251,3 @@ create_servers_list(State) ->
     lists:flatmap(fun({_, _, Service_url}) -> [Service_url] end, State#state.slaves)
   ]),
   Server_list.
-
-broadcast_players(Rooms, Msg) ->
-  lists:flatmap(fun({_, Room_pid}) -> Room_pid ! Msg, [] end, Rooms).
-
-find_room_pid(Room_id) ->
-  gen_server:call(whereis(local_rooms_state), {find_room_pid, Room_id}).
-
-set_state_slaves(State_slaves) ->
-  whereis(local_rooms_state) ! {set_state_slaves, State_slaves}.
-
-init_broadcast_slaves(Data) ->
-  gen_server:cast(whereis(local_rooms_state), Data).
-
-get_servers_list() ->
-  gen_server:call(whereis(local_rooms_state), servers_list).
-
-is_master() ->
-  gen_server:call(whereis(local_rooms_state), is_master).
-
-slave_remove(Slave_pid) ->
-  whereis(local_rooms_state) ! {slave_remove, Slave_pid}.

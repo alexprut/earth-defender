@@ -21,7 +21,7 @@ slave_monitor(Slave_pid) ->
   receive
     {'DOWN', Ref, _Type, _Object, Info} ->
       utils:log("Slave died, info: ~p~n", [Info]),
-      local_rooms_state:slave_remove(Slave_pid),
+      local_rooms_state:remove_slave(Slave_pid),
       exit(self(), kill);
     Unknown ->
       utils:log("Warning: unknown message received in 'slave_monitor', message: ~p~n", [Unknown])
