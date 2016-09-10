@@ -135,12 +135,15 @@ Come server HTTP è stato deciso di utilizzare la libreria \href{https://github.
 Uno dei punti di forza di Cowboy sicuramente è la semplicità del codice. I 3 moduli principali che verranno descritti nel dettaglio nella sezione successiva sono di facile comprensione e composti ciascuno da poche righe di codice di base ben documentato, da arricchire, ovviamente, secondo le esigenze del programmatore.
 
 \subsection{Architettura client}
-Per realizzare le funzionalità visuali e interazione del gioco, al client è stata data le precedenti nominate responsabilità, cioè il compito della logica e rendering del gioco che sono sotto controllo di un'arbitro che è il server.
+Per realizzare le funzionalità visuali e interazione del gioco, al client è stata data le precedenti nominate responsabilità, cioè il compito della logica e rendering del gioco che sono sotto controllo di un arbitro che è il server.
 L'ambiente scelto per esecuzione del client è all'interno di un browser, la motivazione di una tale scelta sono le varie tecnologie, \texttt{API}, primitive e protocolli
-implementati di default che facilitano lo sviluppo e la compatibilità con varie piattaforme. Le tecnologie principali utilizzate per la realizzazione del client è la libreria
-\texttt{three.js} \cite{threejs} utilizzata per implementare il rendering del gioco in \texttt{3D} e il protocollo \texttt{WebSocket} \cite{websocket} per la communicazione con i vari server.
-Inoltre sono stati utilizzati le tecnologie classiche che sono: \texttt{HTML}, \texttt{CSS} e \texttt{JavaScript}.
-
+implementati di default che facilitano lo sviluppo e la compatibilità con varie piattaforme.
+Per l'implementazione del client sono stati utilizzati i linguaggi di markup \texttt{HTML}e \texttt{CSS} ed il linguaggio di programmazione \texttt{JavaScript}.
+Le tecnologie principali utilizzate per la realizzazione del client sono:
+\begin{itemize}
+\item la libreria \texttt{three.js} \cite{threejs} utilizzata per implementare il rendering del gioco in \texttt{3D};
+\item il protocollo \texttt{WebSocket} \cite{websocket} per la comunicazione.
+\end{itemize}
 
 Purtroppo un limite imposto dal browser è il modo di communicazione con gli altri client o server. Le scelte a disposizione sono il classico protocollo \texttt{HTTP}, \texttt{WebSocket} oppure \texttt{WebRTC}. L'ultimo protocollo elencato permette la communicazione fra i vari client (browser), cioè un'architettura \texttt{P2P}, purtroppo il
 protocollo è ancora giovane e non supportato dai vari browser, per questo motivo è stato scelto il protocollo \texttt{WebSocket}. Tale scelta ha influenzato l'architettura
@@ -297,21 +300,25 @@ I restanti moduli servono principalmente a gestire la logica del gioco e quindi 
 \item \texttt{config}: modulo di configurazione iniziale dei parametri del gioco
 \item \texttt{global\_room\_state}: modulo che contiene lo stato globale del gioco, in particolare la lista di tutte le eventuali \textit{room} attive. Nella sezione successiva verrà descritto dettagliatamente come avvengono le operazioni di creazione e join nella \textit{room}, per ora è sufficiente sapere che ogni player può fare parte di una e una sola \textit{room} e possono esistere più \texttt{room} (almeno una) in modo quindi da permettere il multicast dei messaggi (visto a livello di stato globale) oppure broadcast (visto a livello di singola room).
 
-Il modulo \texttt{websocket\_handler} si occupa di inviare messaggi Erlang al modulo descritto che resta in ascolto con \texttt{handle\_info/2} ed \texttt{handle\_call/3} ed in caso di matching esegue le operazioni indicate (si rimanda alla visione del codice per maggiori dettagli).
+Il modulo \texttt{websocket\_handler} si occupa di inviare messaggi Erlang al modulo descritto che resta in ascolto con \texttt{handle\_info/2} ed \texttt{handle\_call/3} (in base al tipo di messaggio: sincrono o asincrono) ed in caso di matching esegue le operazioni indicate (si rimanda alla visione del codice per maggiori dettagli).
 
 In generale, il modulo \texttt{global\_rooms\_state} si occupa di creare/eliminare le room di gioco, di aggiungere/rimuovere i player che ne fanno richiesta nella varie room e di smistare i messaggi a queste ultime e/o direttamente ai player, in funzione dell'operazione da eseguire.
 
+\texttt{global\_room\_state} si occupa inoltre di tenere sincronizzati il master e gli slave e di definire il nuovo master in caso di fallimento del master originario.
 
-Si può osservare inoltre che tale modulo contiene avvia \texttt{gen\_server}:
+
+Si può osservare inoltre che tale modulo avvia \texttt{gen\_server}:
 \begin{lstlisting}[basicstyle=\footnotesize]
 start_link() ->
   gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 \end{lstlisting}
 un generico processo server che fornisce delle funzionalità standard per tracciare e segnalare errori, utile quindi nel caso specifico dove è presente un supervisore che controlla altri nodi.
 
+Nelle prime fasi di implementazione del progetto questo era l'unico modulo ad utilizzare \texttt{gen\_server}, successivamente è stato introdotto in quasi tutti i restanti moduli. 
+
 \item \texttt{room}: modulo che tiene traccia dei player iscritti e dello stato della singola room (posizione navi spaziali, valore della vita, posizione asteroidi, etc\dots).
-La funzione \texttt{loop/1} rimane in ascolto di eventuali messaggi ed in generale si occupa di mantenere lo stato di gioco tra gli iscritti alla room (attraverso l'inoltro in broadcast di specifici messaggi).
-\item \texttt{player}: modulo che tiene traccia dell'\texttt{id} del player. Il suo scopo principale è inoltrare eventuali messaggi che giungono dai moduli per la gestione della logica del gioco alla funzione \texttt{websocket\_info} del modulo \texttt{websocket\_handler}.
+La funzione \texttt{handle\_info/2} rimane in ascolto di eventuali messaggi ed in generale si occupa di mantenere ed aggiornare lo stato di gioco tra gli iscritti alla room e all'occorrenza inoltrare in broadcast gli aggiornamenti.
+\item \texttt{player}: modulo che tiene traccia dell'\texttt{id} del player (oltre ad altre informazioni utili per l'applicazione). Il suo scopo principale è inoltrare eventuali messaggi che giungono dai moduli per la gestione della logica del gioco alla funzione \texttt{websocket\_info} del modulo \texttt{websocket\_handler}.
 \end{itemize}
 
 \subsection{Teorema CAP}
