@@ -8,6 +8,7 @@
 \usepackage{amsmath,amsfonts,amsthm} % Math packages
 \usepackage{enumerate}
 \usepackage{hyperref}
+\usepackage{url}
 \usepackage{listings}
 
 
@@ -181,7 +182,23 @@ Come server HTTP è stato deciso di utilizzare la libreria \href{https://github.
 Uno dei punti di forza di Cowboy sicuramente è la semplicità del codice. I 3 moduli principali che verranno descritti nel dettaglio nella sezione successiva sono di facile comprensione e composti ciascuno da poche righe di codice di base ben documentato, da arricchire, ovviamente, secondo le esigenze del programmatore.
 
 \subsection{Architettura client}
-Per entrare maggiormente ne dettaglio, in figura \ref{ClientArc} è possibile osservare l'architettura del singolo client.
+Per realizzare le funzionalità visuali e interazione del gioco, al client è stata data le precedenti nominate responsabilità, cioè il compito della logica e rendering del gioco che sono sotto controllo di un'arbitro che è il server.
+L'ambiente scelto per esecuzione del client è all'interno di un browser, la motivazione di una tale scelta sono le varie tecnologie, \texttt{API}, primitive e protocolli
+implementati di default che facilitano lo sviluppo e la compatibilità con varie piattaforme. Le tecnologie principali utilizzate per la realizzazione del client è la libreria
+\texttt{three.js} \cite{threejs} utilizzata per implementare il rendering del gioco in \texttt{3D} e il protocollo \texttt{WebSocket} \cite{websocket} per la communicazione con i vari server.
+Inoltre sono stati utilizzati le tecnologie classiche che sono: \texttt{HTML}, \texttt{CSS} e \texttt{JavaScript}.
+
+
+Purtroppo un limite imposto dal browser è il modo di communicazione con gli altri client o server. Le scelte a disposizione sono il classico protocollo \texttt{HTTP}, \texttt{WebSocket} oppure \texttt{WebRTC}. L'ultimo protocollo elencato permette la communicazione fra i vari client (browser), cioè un'architettura \texttt{P2P}, purtroppo il
+protocollo è ancora giovane e non supportato dai vari browser, per questo motivo è stato scelto il protocollo \texttt{WebSocket}. Tale scelta ha influenzato l'architettura
+generale del sistema, essendo un protocollo che è basato sul \texttt{HTTP} e non permettendo di aprire una connessione se non richiesta dal browser stesso ha costretto
+ad utilizzare dei server che implementano il protocollo \texttt{HTTP} e ha tolto ogni possibile architettura del \texttt{P2P} fra i vari client.
+
+
+Per una visione più ad alto livello di astrazione, in figura \ref{ClientArc} è possibile osservare l'architettura del singolo client.
+Purtroppo non entreremo più in dettaglio per vedere com'è progettato il rendering del client inquanto esula dello scopo del seguente documento, 
+ma ci soffermeremo sulla parte di logica e communicazione con il server. Il file e classe responsabile per la communicazione con il server è \texttt{gameClient.js}.
+Rimandiamo alla sezione di ? Documentazione Tecnica per una più dettagliata descrizione della communicazione e scambio del messaggi che avviene fra i client e i server.
 
 [...]
 
@@ -438,5 +455,5 @@ Terminata l'operazione da parte del server, \texttt{websocket\_handler} risponde
 \section{Installazione  e avvio applicazione}
 
 \bibliographystyle{plain}
-\bibliography{Bib}
+\bibliography{SD_Injarn_Pruteanu}
 \end{document}
