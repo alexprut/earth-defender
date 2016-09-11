@@ -79,10 +79,10 @@ Permettere a uno o più utenti di poter comandare una nave spaziale al fine di d
 \section{Architettura e Design}
 \textcolor{red}{DA INTEGRARE CON QUANTO GIA' PRESENTE SU GIT}
 
-In figura \ref{GenArc} è possibile osservare lo schema dell'architettura generale del sistema implementato. Le componenti principali che andremo poi a descrivere sono rappresentate dal client e dal server. Come si osserva, tra questi due vi è un canale full-duplex rappresentato, nel nostro caso, da una connessione TCP (protocollo WebSocket). E' possibile inoltre osservare che i client non comunicano tra di loro in maniera diretta ma attraverso il server master (in figura \ref{Master-Slave} è possibile osservare l'architettura \textit{master-slave} implementata). Master e Slave invece comunicano tra loro al fine di replicare le informazioni (i vari stati di gioco) e garantire una certa disponibilità.
+In figura \ref{GenArc} è possibile osservare lo schema dell'architettura generale del sistema implementato. Le componenti principali che andremo poi a descrivere sono rappresentate dal client e dal server. Come si osserva, tra questi due vi è un canale full-duplex rappresentato, nel nostro caso, da una connessione TCP (protocollo WebSocket). E' possibile inoltre osservare che i client non comunicano tra di loro in maniera diretta ma attraverso il server master (in figura \ref{Master-Slave} è riportata l'architettura \textit{master-slave} implementata). Master e Slave invece comunicano tra loro al fine di replicare le informazioni (i vari stati di gioco) e garantire una certa disponibilità.
 
 Per permettere la modalità di gioco multiplayer viene utilizzato il protocollo WebSocket, questo perchè il gioco viene eseguito all'interno del browser, il protocollo WebSocket
-funziona sopra HTTP con communicazione assincorna che posono avvenire concorrente.
+funziona su HTTP con comunicazione asincrona che possono avvenire concorrente.
 Siccome il browser non può ricevere una connessione, ma solo inizializzarla, connessione
 fra più client (p2p) non è possibile (attualmente un nuovo protocollo WebRTC si sta
 diffondendo per appunto permettere architetture di tipo p2p, purtroppo è una tecnologia ancora troppo giovane).
@@ -145,7 +145,7 @@ Le tecnologie principali utilizzate per la realizzazione del client sono:
 \item il protocollo \texttt{WebSocket} \cite{websocket} per la comunicazione.
 \end{itemize}
 
-Purtroppo un limite imposto dal browser è il modo di communicazione con gli altri client o server. Le scelte a disposizione sono il classico protocollo \texttt{HTTP}, \texttt{WebSocket} oppure \texttt{WebRTC}. L'ultimo protocollo elencato permette la communicazione fra i vari client (browser), cioè un'architettura \texttt{P2P}, purtroppo il
+Purtroppo un limite imposto dal browser è il modo di comunicazione con gli altri client o server. Le scelte a disposizione sono il classico protocollo \texttt{HTTP}, \texttt{WebSocket} oppure \texttt{WebRTC}. L'ultimo protocollo elencato permette la comunicazione fra i vari client (browser), cioè un'architettura \texttt{P2P}, purtroppo il
 protocollo è ancora giovane e non supportato dai vari browser, per questo motivo è stato scelto il protocollo \texttt{WebSocket}. Tale scelta ha influenzato l'architettura
 generale del sistema, essendo un protocollo che è basato sul \texttt{HTTP} e non permettendo di aprire una connessione se non richiesta dal browser stesso ha costretto
 ad utilizzare dei server che implementano il protocollo \texttt{HTTP} e ha tolto ogni possibile architettura del \texttt{P2P} fra i vari client.
@@ -331,17 +331,19 @@ In base all'architettura proposta e alle scelte implementative fatte, in figura 
 \end{figure}
 
 \begin{itemize}
-\item \textit{Coerenza}: il sistema non è perfettamente coerente. A causa di ritardi nell'elaborazione e trasmissione di alcuni messaggi non tutti i nodi (nel nostro caso i client, ma anche i server che replicano i messaggi) vedono esattamente gli stessi dati e quindi lo stesso stato. Nel caso specifico, è possibile affermare che la coerenza dipende solo ed esclusivamente dal ritardo della rete dato che il modello è di tipo \textit{fat client} e \textit{thin server} ed essendo quindi il server a dover rispondere ai client è poco probabile un ritardo causato dal sovraccarico di quest'ultimo.
+\item \textit{Coerenza}: il sistema non è perfettamente coerente. A causa di ritardi nell'elaborazione e trasmissione di alcuni messaggi non tutti i nodi (nel nostro caso i client, ma anche i server che replicano i messaggi) vedono esattamente gli stessi dati nello stesso momento e quindi lo stesso stato. Nel caso specifico, è possibile affermare che la coerenza dipende solo ed esclusivamente dal ritardo della rete dato che il modello è di tipo \textit{fat client} e \textit{thin server} ed essendo quindi il server a dover rispondere ai client è poco probabile un ritardo causato dal sovraccarico di quest'ultimo.
 
 Per il progetto proposto, è importante che tutti i client vedano la stessa posizione degli asteroidi, l'esatta posizione delle altre navi spaziali, oltre all'azione che ogni nave sta eseguendo (sparare o muoversi).
 
 Per cercare di mantenere un alto livello di coerenza tenendo conto quindi di possibili ritardi dei messaggi sono state adottate le seguenti strategie:
 \begin{itemize}
-\item ogni qualvolta un client faccia join all'interno della room, quest'ultimo chiede al server la posizione (attuale, al momento della richiesta) di tutti gli asteroidi presenti nella scena del primo client che ha creato la room (o se muore del primo che ha fatto join nella stessa room, il quale avrà già memorizzato la posizione del creatore della room). Il player al quale viene fatta la richiesta, successivamente, manda in broadcast (anche a se stesso) la posizione attuale di tutti gli asteroidi della propria scena (si noti che in tutto lo scambio messaggi, sicuramente questo è quello più pesante in termini di dimensioni) permettendo quindi a tutti di sincronizzarsi nuovamente sulla stessa scena (ritardo dei messaggi permettendo);
-\item un altra strategia che è stata adottata riguarda la posizione delle varie navi all'interno della scena. In particolare, ogni qualvolta un utente decida di spostare la propria nave, quello che sta realmente facendo è comunicare al serve la direzione verso la quale si sta muovendo, il server si occupa successivamente di comunicare a tutti i partecipanti alla room la nuova posizione del player, quest'ultimo compreso, ciò per prevenire la perdita di eventuali messaggi;
-\item l'ultima strategia riguarda invece la collisione dei vari meteoriti con il pianeta Terra con relativo aggiornamento del punteggio. A causa del ritardo dei messaggi, non essendoci una perfetta sincronizzazione degli elementi della scena, nel caso specifico gli asteroidi, se in un client, avviene l'azione di collisione poco prima di un altro (assumendo la presenza di soli due giocatori) allora verrebbe tolto il doppio del punteggio (con $n$ giocatori $n*punteggio$), per evitare ciò, il punteggio viene aggiornato solo ed esclusivamente nel momento in cui la collisione avviene nell'ultimo giocatore che è entrato nella room (la scelta è stata casuale, anche scegliendo il primo, il risultato sarebbe stato medesimo).
+\item ogni qualvolta un client esegue un operazione di join all'interno della room, quest'ultimo chiede al server la posizione (attuale, al momento della richiesta) di tutti gli asteroidi presenti nella scena del primo client che ha creato la room (o se muore del primo che ha fatto join nella stessa room, il quale avrà già memorizzato la posizione del creatore della room), se anche quest'ultimo muore, del secondo giocatore che ha effettuato un join e via dicendo. Il player al quale viene fatta la richiesta, successivamente, manda in broadcast (anche a se stesso) la posizione attuale di tutti gli asteroidi della propria scena (si noti che in tutto lo scambio messaggi, sicuramente questo è quello più pesante in termini di dimensioni) permettendo quindi a tutti di sincronizzarsi nuovamente sulla stessa scena (ritardo dei messaggi permettendo);
+\item un altra strategia che è stata adottata riguarda la posizione delle varie navi all'interno della scena. In particolare, ogni qualvolta un utente decida di spostare la propria nave, quello che sta realmente facendo è comunicare al serve la direzione verso la quale si sta muovendo, il server si occupa successivamente di comunicare a tutti i partecipanti alla room la nuova posizione del player, quest'ultimo compreso, ciò per prevenire la perdita di eventuali messaggi e mantenere sempre coerente la posizione di tutti i player (in sostanza, il server, come più volte affermato, funge da arbitro, "decide" lui la posizione delle navi all'interno della scena);
+\item l'ultima strategia riguarda invece la collisione dei vari meteoriti con il pianeta Terra seguito dal relativo aggiornamento del punteggio. A causa del ritardo dei messaggi, non essendoci una perfetta sincronizzazione degli elementi della scena, nel caso specifico gli asteroidi, se in un client, avviene l'azione di collisione poco prima di un altro (assumendo la presenza di soli due giocatori) allora verrebbe tolto il doppio del punteggio (con $n$ giocatori $n*punteggio$), per evitare ciò, il punteggio viene aggiornato solo ed esclusivamente nel momento in cui la collisione avviene nell'ultimo giocatore che è entrato nella room (la scelta è stata casuale, anche scegliendo il primo, il risultato sarebbe stato medesimo). Questa scelta implementativa permane comunque anche in caso di perfetta sincronizzazione degli asteroidi.
 \end{itemize}
-\item \textit{Disponibilità}: grazie al modulo \texttt{gen\_server} precedentemente descritto si riesce a garantire una risposta per ogni richiesta che viene fatta.
+
+Per mantenere una buona coerenza, essendo nel caso specifico problematico soprattutto la sincronizzazione dei vari client, avrebbe sicuramente aiutato l'utilizzo di un orologio globale.
+\item \textit{Disponibilità}: L'architettura proposta, composta da un master e le relative repliche con, inoltre, la presenza di un modulo supervisore che si occupa di riavviare eventuali processi che muoiono ha reso il sistema in grado di rispondere ad ogni richiesta. Si precisa che più repliche vengono stanziate, maggiore sarà la disponibilità del sistema.
 \item \textit{Tolleranza di partizione}: In caso di perdita di messaggi il sistema continua comunque a funzionare ma ciò potrebbe causare una forte incoerenza, un esempio potrebbe essere la mancata comunicazione di collisione da parte dell'ultimo client che ha fatto il join nella room (se si vuole riprendere l'esempio precedente), ciò non impedisce il corretto funzionamento del sistema ma gli altri giocatori che vedono nella propria scena collidere un asteroide senza che il punteggio di aggiorni potrebbero osservare un certo stato di incoerenza.
 \end{itemize}
 
@@ -350,32 +352,35 @@ Nella seguente sezione si vuole illustrare in maniera più tecnica come avviene 
 
 La figura \ref{ServerArc} potrebbe trarre in inganno inducendo il lettore a pensare che l'architettura client/server sia di tipo \textit{richiesta/risposta} (comune per server HTTP) ma avendo utilizzato una WebSocket, è possibile sia fare richieste (client $->$ server) senza necessariamente attendere una risposta che ricevere risposte (server $->$ client) senza necessariamente aver fatto alcuna richiesta, scelta vincente quindi per il tipo di applicazione implementata (si provi a pensare infatti ad un gioco real time con \textit{send/receive} bloccanti).
 
+\subsection{Handshake}
+Come già accennato precedentemente, il protocollo di comunicazione utilizzato, appoggiandosi su TCP offre già molte garanzie permettendo di risparmiare un notevole numero di controlli e allo stesso tempo di sfruttare alcune caratteristiche per la gestione di eventuali fallimenti sia da parte dei client che da parte dei server.
+
+La prima fase di comunicazione tra il client ed il server, e quindi la creazione del canale full-duplex tra i due (fase \textit{three way handshake}) avviene sempre nel momento in cui nel client viene selezionata la modalità multiplayer oppure, in caso di fallimento del server, nel qual caso viene creato un nuovo canale (con il server stesso in caso di problema temporaneo di comunicazione oppure con una sua replica).
 \subsection{Create room}
-
-\begin{figure}
-\centering
-\includegraphics[width=\textwidth]{MultiplayerCreateRoomUC}
-\caption{Create Room in modalità Multiplayer}
-\label{CreateRoomUC}
-\end{figure}
-
-\begin{figure}
-\centering
-\includegraphics[width=\textwidth]{MultiplayerCreateRoom}
-\caption{Create Room in modalità Multiplayer}
-\label{CreateRoom}
-\end{figure}
-
-
 Per descrivere come avvengono alcune delle fasi più importanti durante la comunicazione client/server sono stati fatti dei casi d'uso dell'applicazione.
 
 Si tralascia la descrizione del caso "Single player" poiché, come facilmente intuibile, non avviene alcun tipo di comunicazione con il server.
 
-Di seguito si vuole descrivere come avviene la creazione delle room, figura \ref{CreateRoomUC}, (il loro scopo è già stato descritto nella sezione precedente), le strutture dati utilizzate, come avviene la comunicazione tra il client ed il server e tra i vari moduli erlang ed il motivo di alcune scelte implementative.
+Di seguito si vuole descrivere come avviene la creazione delle room, come illustrato in figura \ref{CreateRoomUC} (il loro scopo è già stato descritto nella sezione precedente), le strutture dati utilizzate, come avviene la comunicazione tra il client ed il server e tra i vari moduli erlang ed il motivo di alcune scelte implementative.
 
-L'operazione di creazione della room può essere effettuata da qualsiasi player al completamento della prima operazione di \textit{handshake} con la websocket (ovviamente se non è presente alcuna room iniziale, qualcuno ne dovrà creare una).
+\begin{figure}
+\centering
+\includegraphics[width=10cm]{MultiplayerCreateRoomUC}
+\caption{Create Room in modalità Multiplayer}
+\label{CreateRoomUC}
+\end{figure}
+
+La creazione della room può essere effettuata da qualsiasi player al completamento delle operazioni di \textit{handshake} con la websocket (ovviamente se non è presente alcuna room iniziale, ovvero \texttt{rooms\_list} restituisce \texttt{[]}, qualcuno ne dovrà creare una).
 
 In figura \ref{CreateRoom} è possibile osservare quali sono le fasi di scambio messaggi che avvengono tra il client ed il server durante la fase di creazione della room.
+
+\begin{figure}
+\centering
+\includegraphics[width=10cm]{MultiplayerCreateRoom}
+\caption{Create Room in modalità Multiplayer}
+\label{CreateRoom}
+\end{figure}
+
 
 Inizialmente la richiesta parte da \texttt{gameDOMHandler.js}
 
@@ -388,56 +393,65 @@ document.getElementById('gameRoom-create').addEventListener('click',
                     gameHandler.start();
 \end{lstlisting}
 
-L'operazione di \texttt{send} del client viene inoltrata al modulo erlang \texttt{websocket\_handler} (dando per scontato, ovviamente, che il server sia stato avviato correttamente e la fase di \textit{handshake} sia avvenuta con successo. Si rimanda alla sotto sezione successiva la descrizione delle prime fasi illustrate in figura \ref{CreateRoom}).
+L'operazione di \texttt{send()} del client viene inoltrata al modulo erlang \texttt{websocket\_handler} (dando per scontato, ovviamente, che il server sia stato avviato correttamente e la fase di \textit{handshake} sia avvenuta con successo.
 
 \texttt{websocket\_handler} a questo punto avvia la funzione \texttt{websocket\_handle/2} e nello specifico, l'azione trasmessa dal client collima con la clausola:
 \begin{lstlisting}[basicstyle=\footnotesize]
 "room_add" ->
-      Room_id = uuid:generate(),
-      Room_pid = room:start(Room_id),
-      io:format("Room id:~n~p~n", [Room_id]),
-      global_rooms_state:add_room(Room_id, Room_pid),
-      Player_id = uuid:generate(),
-      Player_pid = player:start(self(), Player_id),
-      self() ! {player_id, Player_id},
-      Room_pid ! {player_add, {Player_id, Player_pid}},
-      New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid = Player_pid, room_pid = Room_pid},
-      reply([<<"room_id">>, Room_id], New_state);
+          Ship_id = Data,
+          Room_id = utils:generate_uuid(),
+          {_, Room_pid} = room:start_link(Room_id),
+          utils:log("Room id:~n~p~n", [Room_id]),
+          global_rooms_state:add_room(Room_id, Room_pid),
+          Player_id = utils:generate_uuid(),
+          Player_pid = player:start(self(), Player_id, Ship_id),
+          self() ! {player_id, Player_id},
+          Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
+          New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid =
+          	 Player_pid, room_pid = Room_pid, ship_id = Ship_id},
+          global_rooms_state:init_broadcast_slaves({binary_to_list(Event), 
+          	 {Room_id, Player_id, Ship_id}}),
+          reply([<<"room_id">>, Room_id], New_state);
 \end{lstlisting}
 
-Come è possibile osservare dal codice sopra, viene assegnato un codice unico identificativo alla room ed inserita nello stato del modulo \texttt{global\_room\_state}, il quale presenta al suo interno un campo di tipo record contenente la lista di tutte le room
+Come è possibile osservare dal codice sopra, viene assegnato un nome unico identificativo alla room ed inserita nello stato del modulo \texttt{global\_room\_state}, il quale presenta al suo interno un campo di tipo record contenente la lista di tutte le room
 \begin{lstlisting}[basicstyle=\footnotesize]
--record(state, {rooms = []}).
+-record(state, {rooms = [], slaves = [], role}).
 \end{lstlisting}
 La stessa operazione viene eseguita per il player che ha fatto la richiesta ma quest'ultimo viene invece inserito nella lista \texttt{players} del record:
 \begin{lstlisting}[basicstyle=\footnotesize]
--record(state, {players = [], id, life = ?EARTH_LIFE,
-				asteroids_position, ships_position = [[]]}).
+-record(room_state, {players = [], id, life, asteroids_position, ships_position = [[]]}).
 \end{lstlisting}
 all'interno della room.
 
-Terminata l'operazione da parte del server, \texttt{websocket\_handler} risponde al client
+Terminata l'operazione da parte del server, \texttt{websocket\_handler} risponde al client restituendo gli \texttt{id} (da non confondere con il \texttt{PID}) assegnati dal server al player stesso, oltre a comunicare in broadcast il numero di giocatori presenti nella room (che banalmente, in fase di creazione sarà sempre 1).
+
+La scelta di assegnare un nome identificativo unico ad ogni player come ad ogni room nasce dal fatto che, essendo il sistema distribuito (quindi può verificarsi il passaggio di stato da un nodo ad un altro) e ricordando, inoltre, che ad ogni fallimento di un processo erlang il \texttt{PID} cambia, si ha la garanzia che in caso di aggiornamento del \texttt{PID} si leghi il nuovo valore all'id precedentemente definito. 
 
 
 
-\subsection{Join romm}
-
-\begin{figure}
-\centering
-\includegraphics[width=\textwidth]{MultiplayerJoinRoom}
-\caption{Join Room in modalità Multiplayer}
-\label{JoinRoom}
-\end{figure}
+\subsection{Join room}
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{MultiplayerJoinRoomUC}
+\includegraphics[width=10cm]{MultiplayerJoinRoomUC}
 \caption{Join Room in modalità Multiplayer}
 \label{JoinRoomUC}
 \end{figure}
 
-\section{Utente finale}
-\newpage
+L'operazione di \textit{join} nella room (se ne esiste almeno una, si veda figura \ref{JoinRoomUC}) può essere effettuata da qualsiasi player al completamento della prima operazione di \textit{handshake} con la websocket.
+
+In figura \ref{JoinRoom} è possibile osservare quali sono le fasi di scambio messaggi che avvengono tra il client ed il server nel caso specifico.
+
+\begin{figure}
+\centering
+\includegraphics[width=10cm]{MultiplayerJoinRoom}
+\caption{Join Room in modalità Multiplayer}
+\label{JoinRoom}
+\end{figure}
+
+
+
 \section{Installazione  e avvio applicazione}
 
 \bibliographystyle{plain}
