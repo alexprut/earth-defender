@@ -86,15 +86,14 @@ Permettere a uno o più utenti di poter comandare una nave spaziale al fine di d
 \end{enumerate}
 
 \section{Architettura e Design}
-\textcolor{red}{DA INTEGRARE CON QUANTO GIA' PRESENTE SU GIT}
 
-In figura \ref{GenArc} è possibile osservare lo schema dell'architettura generale del sistema implementato. Le componenti principali che andremo poi a descrivere sono rappresentate dal client e dal server. Come si osserva, tra questi due vi è un canale full-duplex rappresentato, nel nostro caso, da una connessione TCP (protocollo WebSocket). E' possibile inoltre osservare che i client non comunicano tra di loro in maniera diretta ma attraverso il server master (in figura \ref{Master-Slave} è riportata l'architettura \textit{master-slave} implementata). Master e Slave invece comunicano tra loro al fine di replicare le informazioni (i vari stati di gioco) e garantire una certa disponibilità.
+In figura \ref{GenArc} è possibile osservare lo schema dell'architettura generale del sistema implementato. Le componenti principali che andremo poi a descrivere sono rappresentate dal client e dal server. Come si osserva, tra questi due vi è un canale full-duplex rappresentato, nel nostro caso, da una connessione \texttt{TCP} (protocollo \texttt{WebSocket}). E' possibile inoltre osservare che i client non comunicano tra di loro in maniera diretta ma attraverso il server master (in figura \ref{Master-Slave} è riportata l'architettura \textit{master-slave} implementata). Master e Slave invece comunicano tra loro al fine di replicare le informazioni (i vari stati di gioco) e garantire una certa disponibilità.
 
-Per permettere la modalità di gioco multiplayer viene utilizzato il protocollo WebSocket, questo perchè il gioco viene eseguito all'interno del browser, il protocollo WebSocket
-funziona su HTTP con comunicazione asincrona che possono avvenire concorrente.
+Per permettere la modalità di gioco multiplayer viene utilizzato il protocollo \texttt{WebSocket}, questo perchè il gioco viene eseguito all'interno del browser, il protocollo \texttt{WebSocket}
+funziona su \texttt{HTTP} con comunicazione asincrona che possono avvenire concorrente.
 Siccome il browser non può ricevere una connessione, ma solo inizializzarla, connessione
-fra più client (p2p) non è possibile (attualmente un nuovo protocollo WebRTC si sta
-diffondendo per appunto permettere architetture di tipo p2p, purtroppo è una tecnologia ancora troppo giovane).
+fra più client (\texttt{p2p}) non è possibile (attualmente un nuovo protocollo \texttt{WebRTC} si sta
+diffondendo per appunto permettere architetture di tipo \texttt{p2p}, purtroppo è una tecnologia ancora troppo giovane).
 
 \begin{figure}
 \centering
@@ -103,7 +102,7 @@ diffondendo per appunto permettere architetture di tipo p2p, purtroppo è una te
 \label{GenArc}
 \end{figure}
 
-In figura \ref{GenArc} i client non sono altri che dei browser con supporto per WebGL e WebSocket. All'inizio un client (browser) esegue una richiesta al DNS per ricevere l0indirizzo del WebServer, il DNS è anche responsabile del load balancing. Una volta ricevuta la risposta dal DNS con l'indirizzo di uno dei WebServer il client fa una richiesta e riceve tutti gli asset del gioco (js, imagini, css, ...). Il WebServer e solo responsabile per fornire gli asset del gioco, ne di più ne di meno. Infine il client si connete ad uno dei server del gioco (Erlang) e decide di creare una nuova stanza o entrare in una esistente. I server sono scritti nel linguaggio Erlang e con lo scopo primario di essere fault tolerant e distribuiti.
+In figura \ref{GenArc} i client non sono altri che dei browser con supporto per WebGL e WebSocket. All'inizio un client (browser) esegue una richiesta al DNS per ricevere l0indirizzo del WebServer.. Una volta ricevuta la risposta dal DNS con l'indirizzo di uno dei WebServer il client fa una richiesta e riceve tutti gli asset del gioco (js, imagini, css, ...). Il WebServer e solo responsabile per fornire gli asset del gioco, ne di più ne di meno. Infine il client si connete ad uno dei server del gioco (Erlang) e decide di creare una nuova stanza o entrare in una esistente. I server sono scritti nel linguaggio Erlang e con lo scopo primario di essere fault tolerant e distribuiti.
 
 \begin{figure}[h]
 \centering
@@ -120,22 +119,36 @@ Di seguito vengono elencati i messaggi scambiati fra il client e il server. Per 
 
 Sotto sono elencati i messaggi mandati dal client al server:
 \begin{itemize}
-\item rooms\_list \textit{(richiesta per la lista delle room disponibili)}
-\item room\_join \textit{(richiesta per entrare in una room)}
-\item room\_add (richiesta per creare una nuova room)
-\item action\_earth\_collision (segnalare che c'è stata una collisione con un'asteroide)
-\item ship\_position (richiesta della posizione della navicella degli altri giocatori)
-\item game\_master\_asteroids\_position (richiesta per la posizione degli asteroidi prima di entrare nel gioco, da un client master)
-\item game\_ship\_position \textit{(richiesta per la posizione delle navicelle nel gioco)}
-\item action\_ship\_move \textit{(segnalare al server e altri client che la navicella si sta spostando)}
-\item action\_ship\_shot \textit{(segnalare al server e altri client che la navicella ha sparato)}
-\item ping \textit{(messaggio di heartbeat, per dire al server che si è ancora in ascolto e di non chiudere la connessione con il client)}
+\item \texttt{rooms\_list} (richiesta per la lista delle room disponibili)
+\item \texttt{room\_join} (richiesta per entrare in una room)
+\item \texttt{room\_add} (richiesta per creare una nuova room)
+\item \texttt{action\_earth\_collision} (segnalare che c'è stata una collisione con un'asteroide)
+\item \texttt{ship\_position} (richiesta della posizione della navicella degli altri giocatori)
+\item \texttt{game\_master\_asteroids\_position} (richiesta per la posizione degli asteroidi prima di entrare nel gioco, da un client master)
+\item \texttt{game\_ship\_position} (richiesta per la posizione delle navicelle nel gioco)
+\item \texttt{action\_ship\_move} (segnalare al server e altri client che la navicella si sta spostando)
+\item \texttt{action\_ship\_shot} (segnalare al server e altri client che la navicella ha sparato)
+\item \texttt{ping} (messaggio di heartbeat, per dire al server che si è ancora in ascolto e di non chiudere la connessione con il client)
 \end{itemize}
 
 
 Sotto sono elencati i messaggi mandati dal server al client:
 \begin{itemize}
-\item room\_list (restituisce un elenco delle room disponibili)
+\item \texttt{room\_list} (restituisce un elenco delle room disponibili)
+\item \texttt{player\_id} (l'identificativo univoco del client)
+\item \texttt{room\_players\_number} (numero di giocatori all'interno di una room)
+\item \texttt{game\_life} (vita rimasta della terra )
+\item \texttt{asteroid\_position} (richiesta per l'invio della posizione degli asteroidi al server)
+\item \texttt{asteroid\_position\_set} (messaggio per impostare la nuova posizione degli asteroidi)
+\item \texttt{ship\_position\_set} (messaggio per impostare la nuova posizione della navicella spaziale)
+\item \texttt{ship\_shoot} (segnala che un altro utente ha sparato)
+\item \texttt{servers\_list} (la lista dei server)
+\item \texttt{server\_error} (un fallimento nel server)
+\item \texttt{game\_reconnect} (risposta affermativa alla richiesta di riconessione al gioco)
+\item \texttt{room\_id} (l'identificativo univoco della room)
+\item \texttt{pong} (messaggio di heartbeat, risposta al messaggio ping)
+\item \texttt{servers\_list\_redirect} (segnala al client la lista aggiornata dei server e di ricontattarne uno)
+\item \texttt{remove\_ship\_scene} (messaggio usato per rimuovere una navicella spaziale dalla scena del gioco se un utente si scollega)
 \end{itemize}
 
 \subsection{Cowboy 2.0}
@@ -208,8 +221,8 @@ start(_Type, _Args) ->
 init(_Args) ->
   Procs = [
     {
-      global_rooms_state,
-      {global_rooms_state, start_link, []},
+      local_rooms_state,
+      {local_rooms_state, start_link, []},
       permanent,
       infinity,
       worker,
@@ -224,12 +237,12 @@ init(_Args) ->
 \begin{lstlisting}[basicstyle=\footnotesize][basicstyle=\footnotesize]
 websocket_handle({text, Msg}, State) ->
   [Event, Data] = jiffy:decode(Msg),
-  case global_rooms_state:is_master() of
+  case local_rooms_state:is_master() of
     true ->
       case binary_to_list(Event) of
         "game_reconnect" ->
           [Room_id, Player_id, Ship_id] = Data,
-          Room_pid = global_rooms_state:get_room_pid(Room_id),
+          Room_pid = local_rooms_state:get_room_pid(Room_id),
           case Room_id of
             error ->
               reply([<<"server_error">>], State);
@@ -239,12 +252,12 @@ websocket_handle({text, Msg}, State) ->
               Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
               New_state = State#state{player_id = Player_id, room_id = Room_id,
               	 player_pid = Player_pid, room_pid = Room_pid},
-              self() ! {servers_list, global_rooms_state:get_servers_list()},
+              self() ! {servers_list, local_rooms_state:get_servers_list()},
               reply([<<"game_reconnect">>], New_state)
            end;
         "rooms_list" ->
-          self() ! {servers_list, global_rooms_state:get_servers_list()},
-          reply([<<"rooms_list">>, global_rooms_state:get_rooms_list()], State);
+          self() ! {servers_list, local_rooms_state:get_servers_list()},
+          reply([<<"rooms_list">>, local_rooms_state:get_rooms_list()], State);
         .
         .
         .
@@ -305,13 +318,13 @@ In figura \ref{Scaled-Master-Slave} viene proposta una possibile soluzione scala
 I restanti moduli servono principalmente a gestire la logica del gioco e quindi mantenere uno scambio messaggio consistente. Come si può osservare in figura \ref{ServerArc}, lo scambio messaggi avviene solo ed esclusivamente tra i moduli stessi e \texttt{websocket\_handler} (eccezion fatta per \texttt{config}), questi messaggi, come precedentemente affermato, una volta inoltrati al modulo \texttt{websocket\_handler} vengono passati direttamente alla funzione \texttt{websocket\_info/2} per poi, eventualmente, arrivare al client.
 \begin{itemize}
 \item \texttt{config}: modulo di configurazione iniziale dei parametri del gioco
-\item \texttt{global\_room\_state}: modulo che contiene lo stato globale del gioco, in particolare la lista di tutte le eventuali \textit{room} attive. Nella sezione successiva verrà descritto dettagliatamente come avvengono le operazioni di creazione e join nella \textit{room}, per ora è sufficiente sapere che ogni player può fare parte di una e una sola \textit{room} e possono esistere più \texttt{room} (almeno una) in modo quindi da permettere il multicast dei messaggi (visto a livello di stato globale) oppure broadcast (visto a livello di singola room).
+\item \texttt{local\_rooms\_state}: modulo che contiene lo stato globale del gioco, in particolare la lista di tutte le eventuali \textit{room} attive. Nella sezione successiva verrà descritto dettagliatamente come avvengono le operazioni di creazione e join nella \textit{room}, per ora è sufficiente sapere che ogni player può fare parte di una e una sola \textit{room} e possono esistere più \texttt{room} (almeno una) in modo quindi da permettere il multicast dei messaggi (visto a livello di stato globale) oppure broadcast (visto a livello di singola room).
 
 Il modulo \texttt{websocket\_handler} si occupa di inviare messaggi Erlang al modulo descritto che resta in ascolto con \texttt{handle\_info/2} ed \texttt{handle\_call/3} (in base al tipo di messaggio: sincrono o asincrono) ed in caso di matching esegue le operazioni indicate (si rimanda alla visione del codice per maggiori dettagli).
 
-In generale, il modulo \texttt{global\_rooms\_state} si occupa di creare/eliminare le room di gioco, di aggiungere/rimuovere i player che ne fanno richiesta nella varie room e di smistare i messaggi a queste ultime e/o direttamente ai player, in funzione dell'operazione da eseguire.
+In generale, il modulo \texttt{local\_rooms\_state} si occupa di creare/eliminare le room di gioco, di aggiungere/rimuovere i player che ne fanno richiesta nella varie room e di smistare i messaggi a queste ultime e/o direttamente ai player, in funzione dell'operazione da eseguire.
 
-\texttt{global\_room\_state} si occupa inoltre di tenere sincronizzati il master e gli slave e di definire il nuovo master in caso di fallimento del master originario.
+\texttt{local\_rooms\_state} si occupa inoltre di tenere sincronizzati il master e gli slave e di definire il nuovo master in caso di fallimento del master originario.
 
 
 Si può osservare inoltre che tale modulo avvia \texttt{gen\_server}:
@@ -409,14 +422,14 @@ L'operazione di \texttt{send()} del client viene inoltrata al modulo erlang \tex
           Room_id = utils:generate_uuid(),
           {_, Room_pid} = room:start_link(Room_id),
           utils:log("Room id:~n~p~n", [Room_id]),
-          global_rooms_state:add_room(Room_id, Room_pid),
+          local_rooms_state:add_room(Room_id, Room_pid),
           Player_id = utils:generate_uuid(),
           Player_pid = player:start(self(), Player_id, Ship_id),
           self() ! {player_id, Player_id},
           Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
           New_state = State#state{player_id = Player_id, room_id = Room_id, player_pid =
           	 Player_pid, room_pid = Room_pid, ship_id = Ship_id},
-          global_rooms_state:init_broadcast_slaves({binary_to_list(Event), 
+          local_rooms_state:init_broadcast_slaves({binary_to_list(Event), 
           	 {Room_id, Player_id, Ship_id}}),
           reply([<<"room_id">>, Room_id], New_state);
 \end{lstlisting}
