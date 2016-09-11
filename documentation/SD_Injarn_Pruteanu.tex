@@ -18,7 +18,8 @@
   language=erlang,                 % the language of the code
   numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
   numbersep=3pt,                   % how far the line-numbers are from the code
-  numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
+  numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers,
+  breaklines=true
 }
 
 \usepackage{fancyhdr} % Custom headers and footers
@@ -446,7 +447,116 @@ Terminata l'operazione da parte del server, \texttt{websocket\_handler} risponde
 
 \section{Utente finale}
 \newpage
-\section{Installazione  e avvio applicazione}
+\section{Installazione e avvio applicazione}
+In questo capitolo vengono date le indicazioni per l'installazione e l'avvio dell'applicazione.
+Prima di procedere con l'installazione assicurarsi di aver \texttt{Git}\cite{git} e \texttt{Bower}\cite{bower} sul proprio pc installato.
+Di seguito vengono elencati i passaggi da seguire per installare sia il client che il server dell'applicazione:
+\begin{enumerate}  
+\item
+Scaricare i file sorgenti del gioco:
+\begin{lstlisting}[language=bash]
+git clone https://github.com/alexprut/earth-defender.git
+\end{lstlisting}
+
+\item
+Entrare nella cartella dei file sorgenti e cambiare branch:
+\begin{lstlisting}[language=bash]
+cd earth-defender
+git checkout real-time-multiplayer
+\end{lstlisting}
+\end{enumerate}
+
+Ora che sono stati scaricati i file sorgenti del gioco, si procede con l'installazione del client e server. Di seguito sono le istruzione per il primo nominato:
+\begin{enumerate}  
+\item
+Entrare nella cartella dei file sorgenti del client:
+\begin{lstlisting}[language=bash]
+cd ./client
+\end{lstlisting}
+
+\item
+Installare tutte le librerie e dipendenze:
+\begin{lstlisting}[language=bash]
+bower install
+\end{lstlisting}
+
+\item
+Configurare il client (si rimanda al file di default in \texttt{./client/js/main.js} dove è incluso una configurazione generale del gioco), di seguito si mostra una possibile configurazione:
+\begin{lstlisting}
+document.body.onload = function () {
+    game = new Game({
+        'maxLife': 1000,
+        'maxMeteorietes': 200,
+        'isMultiplayer': true,
+        'maxPlayers': 10,
+        'debug': false,
+        'servers': ['localhost:8888/websocket', 'localhost:8889/websocket']
+    });
+    game.init();
+};
+\end{lstlisting}
+\end{enumerate}
+
+Configurato il client è possibile avviare il gioco semplicemente aprendo il file \texttt{./client/index.html}. L'ultimo semplice passaggio è ai fini di demo, in una
+installazione del gioco in produzione tutti i file sorgente del client andranno ospitati su un web server, è accedibili attraverso un indirizzo url.
+Per rendere l'architettura il più realistico possibile è possibile utilizzare una machcina virtuale sul proprio pc per simulare una web server, per semplicità d'uso
+si consiglia di utilizzare \texttt{Docker}\cite{docker} ed eseguire il seguente commando:
+\begin{lstlisting}[language=bash]
+docker run -p 8000:80 -v "$PWD"/client:/usr/share/nginx/html:ro nginx
+\end{lstlisting}
+Infine è sufficiente aprire il seguente indirizzo url \url{http://localhost:8000} dal proprio browser per utilizzare il client del gioco.
+
+A seguire vengono date le istruzioni per l'installazione e l'eseguzione del server.
+\begin{enumerate}
+\item
+I file sorgenti del server sono all'interno della cartella \url{./server}:
+\begin{lstlisting}[language=bash]
+cd ./server
+\end{lstlisting}
+
+\item
+Installare Erlang.mk:
+\begin{lstlisting}[language=bash]
+curl https://erlang.mk/erlang.mk -o erlang.mk
+make -f erlang.mk bootstrap
+\end{lstlisting}
+
+\item
+Configurare il server (si rimanda al file di default in \texttt{./server/src/config.js} dove è incluso una configurazione generale del server), di seguito si mostra una possibile configurazione:
+\begin{lstlisting}[language=erlang]
+-define(EARTH_LIFE, 1000).
+-define(EARTH_LIFE_DECREASE, 100).
+-define(SHIP_MOVE_FACTOR_X, 2).
+-define(SHIP_MOVE_FACTOR_Y, 2).
+-define(SHIP_MOVE_FACTOR_Z, 5).
+-define(WEBSOCKET_TIMEOUT, 120000).
+-define(WEBSOCKET_PORT, 8888).
+-define(DEFAULT_HOSTNAME, "localhost").
+-define(DEBUG, true).
+
+\end{lstlisting}
+
+\item
+Installare tutte le dipendenze ed eseguire il build dell'applicazione:
+\begin{lstlisting}[language=bash]
+make
+\end{lstlisting}
+
+\item
+Eseguire il server in maniera veloce (il server dovrebbe stare in ascolto all'indirizzo \texttt{localhost:8888/websocket}):
+\begin{lstlisting}[language=bash]
+make run
+\end{lstlisting}
+\end{enumerate}
+
+Arrivati a questo punto è possibile provare le funzionalità del client e server.
+L'architettura creata è composta da un solo server, che è il master. Per aggiungere dei slave anche in corso dell'esecuzione dell'applicazione è sufficiente
+chiamare il seguente commando:
+\begin{lstlisting}[language=bash]
+./server/_rel/earth_defender/erts-8.0.2/bin/erl -boot ./server/_rel/earth_defender/releases/1.0.0/earth_defender -sname 'ketchup' -setcookie 'earth_defender' -port 8889 -hostname "localhost" -role slave -master_name earth_defender@host
+\end{lstlisting}
+Da modificare però in modo univoco i parametri \texttt{-sname}, \texttt{-port}, \texttt{-hostname} e \texttt{-master\_name} ogni tal volta che si
+vuole aggiungere un nuovo slave all'architettura.
 
 \bibliographystyle{plain}
 \bibliography{SD_Injarn_Pruteanu}
