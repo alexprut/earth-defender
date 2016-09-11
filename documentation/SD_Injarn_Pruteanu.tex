@@ -151,10 +151,6 @@ Sotto sono elencati i messaggi mandati dal server al client:
 \item \texttt{remove\_ship\_scene} (messaggio usato per rimuovere una navicella spaziale dalla scena del gioco se un utente si scollega)
 \end{itemize}
 
-\subsection{Cowboy 2.0}
-Come server HTTP è stato deciso di utilizzare la libreria \href{https://github.com/ninenines/cowboy}{Cowboy} interamente scritta in Erlang poiché fornisce un ottimo supporto per le WebSocket (tutte le versioni sia standard che non definitive), modello su cui è basato il progetto.
-
-Uno dei punti di forza di Cowboy sicuramente è la semplicità del codice. I 3 moduli principali che verranno descritti nel dettaglio nella sezione successiva sono di facile comprensione e composti ciascuno da poche righe di codice di base ben documentato, da arricchire, ovviamente, secondo le esigenze del programmatore.
 
 \subsection{Architettura client}
 Per realizzare le funzionalità visuali e interazione del gioco, al client è stata data le precedenti nominate responsabilità, cioè il compito della logica e rendering del gioco che sono sotto controllo di un arbitro che è il server.
@@ -184,6 +180,23 @@ Rimandiamo alla sezione di ? Documentazione Tecnica per una più dettagliata des
 \caption{Architettura del client}
 \label{ClientArc}
 \end{figure}
+
+\subsection{Erlang}
+La scelta del linguaggio per la realizzazione del server è Erlang v.18 \cite{erlang}. Erlang è un linguaggio funzionale, con primitive
+per facilitare la communicazione iter-processi/nodi e ampiamente utilizzato per la realizzazione di sistemi distribuiti, real soft-time,
+applicazioni non-stop e fault-tolerant.
+Tale scelta è sembrata naturale date le funzionalità primitive implementate dal linguaggio e gli scopi della nascita del linguaggio stesso.
+Le funzionalità di maggior rilievo che successivamente sono state utilizzate nell'implementazione sono la possibilità di monitorare 
+altri processi/nodi ed essere notificati quando muore \cite{erlang-monitor, erlang-supervisor}, librerie per transazioni distribuite \cite{erlang-mnesia} e
+un ampio set di librerie (\texttt{OTP}). In particolare il behaviour \texttt{gen\_server} \cite{erlang-gen-server} è risultato
+di grande supporto per la realizazzione del server del gioco.
+
+
+\subsection{Cowboy 2.0}
+Come server \texttt{HTTP} è stato deciso di utilizzare la libreria \href{https://github.com/ninenines/cowboy}{Cowboy} interamente scritta in Erlang poiché fornisce un ottimo supporto per le WebSocket (tutte le versioni sia standard che non definitive), modello su cui è basato il progetto.
+Uno dei punti di forza di Cowboy sicuramente è la semplicità del codice. I 3 moduli principali che verranno descritti nel dettaglio nella sezione successiva sono di facile comprensione e composti ciascuno da poche righe di codice di base ben documentato, da arricchire, ovviamente, secondo le esigenze del programmatore.
+
+\subsection{Rappresentazione esterna dei dati}
 
 \subsection{Architettura server}
 In figura \ref{ServerArc} possiamo invece osservare l'architettura che è stata implementata per il server.
