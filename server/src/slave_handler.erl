@@ -60,7 +60,7 @@ handle_cast({Event, Data}, State) ->
       {Room_id, Player_id, Ship_id} = Data,
       Room_pid = local_rooms_state:get_room_pid(Room_id),
       Player_pid = player:start(self(), Player_id, Ship_id),
-      Room_pid ! {player_add, {Player_id, Player_pid}},
+      Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
       {noreply, State};
     "room_add" ->
       {Room_id, Player_id, Ship_id} = Data,
@@ -68,7 +68,7 @@ handle_cast({Event, Data}, State) ->
       utils:log("Room id:~n~p~n", [Room_id]),
       local_rooms_state:add_room(Room_id, Room_pid),
       Player_pid = player:start(self(), Player_id, Ship_id),
-      Room_pid ! {player_add, {Player_id, Player_pid}},
+      Room_pid ! {player_add, {Player_id, Player_pid, Ship_id}},
       New_state = State#state{},
       {noreply, New_state};
     "action_earth_collision" ->
