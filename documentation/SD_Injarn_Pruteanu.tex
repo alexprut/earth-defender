@@ -187,16 +187,31 @@ per facilitare la communicazione iter-processi/nodi e ampiamente utilizzato per 
 applicazioni non-stop e fault-tolerant.
 Tale scelta è sembrata naturale date le funzionalità primitive implementate dal linguaggio e gli scopi della nascita del linguaggio stesso.
 Le funzionalità di maggior rilievo che successivamente sono state utilizzate nell'implementazione sono la possibilità di monitorare 
-altri processi/nodi ed essere notificati quando muore \cite{erlang-monitor, erlang-supervisor}, librerie per transazioni distribuite \cite{erlang-mnesia} e
-un ampio set di librerie (\texttt{OTP}). In particolare il behaviour \texttt{gen\_server} \cite{erlang-gen-server} è risultato
-di grande supporto per la realizazzione del server del gioco.
+altri processi/nodi ed essere notificati quando muore, librerie per transazioni distribuite e
+un ampio set di librerie (\texttt{OTP}). In particolare il behaviour \texttt{gen\_server} è risultato
+di grande supporto per la realizazzione del server del gioco \cite{erlang-monitor, erlang-supervisor, erlang-mnesia, erlang-gen-server}.
 
 
 \subsection{Cowboy 2.0}
-Come server \texttt{HTTP} è stato deciso di utilizzare la libreria \href{https://github.com/ninenines/cowboy}{Cowboy} interamente scritta in Erlang poiché fornisce un ottimo supporto per le WebSocket (tutte le versioni sia standard che non definitive), modello su cui è basato il progetto.
+Come server \texttt{HTTP} e implementazione del protocollo WebSocket  è stato deciso di utilizzare \href{https://github.com/ninenines/cowboy}{Cowboy}, una libreria interamente scritta in Erlang che fornisce un ottimo supporto per le WebSocket (tutte le versioni sia standard che non definitive), modello su cui è basato il progetto.
 Uno dei punti di forza di Cowboy sicuramente è la semplicità del codice. I 3 moduli principali che verranno descritti nel dettaglio nella sezione successiva sono di facile comprensione e composti ciascuno da poche righe di codice di base ben documentato, da arricchire, ovviamente, secondo le esigenze del programmatore.
 
 \subsection{Rappresentazione esterna dei dati}
+Da quanto descritto nei precedenti paragrafi è facile intuire che la comunicazione può avvenire fra processi erlang oppure tra il client (browser) e il server,
+che in entrambi i casi si possono travare su nodi diversi in giro per il mondo. Di conseguenza sorge il problema della rappresentazione esterna dei dati per
+la comunicazione e scambio dei messaggi. Per quanto riguarda la comunicazione fra processi erlang il problema non persiste in quanto
+la soluzione ci viene offerta dalle primitive del linguaggio stesso \cite{erlang-edr}.
+
+Riguardo alla comunicazione fra il client e il server si è optato per 
+il formato \texttt{JSON} per la rapresentazione esterna dei dati. In particolare per semplificare ancor di più la sintassi e semantica del formato \texttt{JSON}, solo
+messaggi del tipo: \texttt{[Event, Data]} si possono scambiare fra client e server, dal nome \texttt{Event} e \texttt{Data} si può intuire il loro significato.
+Quando invece c'è la necessita di mandare una quantità più grande di dati un formato più complesso è stato stabilito: \texttt{[Event, [Data1, Data2, ...]]}, dove 
+\texttt{Data1} potrebbe essere a sua volta un'altra lista. A volte è necessario mandare messaggi con solo l'evento e nessun tipo di dato, in quel caso il campo \texttt{Data} può assumere valore \texttt{null}, e.g. \texttt{[''evento'', null]}.
+
+Quando un processo erlang riceve un messaggio in formato \texttt{JSON}, deve inanzitutto decodificarlo per poterlo consumare, purtroppo non ci sono librerie e primitive di linguaggio
+per la codifica e decodifica dei messaggi in formato \texttt{JSON}. Per ovviare al problema enunciato precedentemente è stata utilizzata una libreria erlang da terze parti,
+in particolare Jiffy \cite{jiffy}.
+
 
 \subsection{Architettura server}
 In figura \ref{ServerArc} possiamo invece osservare l'architettura che è stata implementata per il server.
