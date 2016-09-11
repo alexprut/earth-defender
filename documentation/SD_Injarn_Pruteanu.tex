@@ -470,10 +470,15 @@ In figura \ref{JoinRoom} è possibile osservare quali sono le fasi di scambio me
 \label{JoinRoom}
 \end{figure}
 
+Come nel caso precedente, la richiesta di join parte sempre da \texttt{gameDOMHandler.js} per giungere al modulo erlang \texttt{weboscket\_handler} ed eseguire le opportune azioni.
+
+L'operazione di \textit{join} ha gli stessi effetti dell'operazione di creazione con l'unica differenza che aggiorna semplicemente la lista dei player partecipanti e si occupa di inoltrare nuovamente a tutti la posizione degli asteroidi senza quindi avviare una nuova room. 
+
+
 
 \section{Installazione e avvio applicazione}
 In questo capitolo vengono date le indicazioni per l'installazione e l'avvio dell'applicazione.
-Prima di procedere con l'installazione assicurarsi di aver \texttt{Git}\cite{git} e \texttt{Bower}\cite{bower} sul proprio pc installato.
+Prima di procedere con l'avvio assicurarsi di avere \texttt{Git}\cite{git} e \texttt{Bower}\cite{bower} installati, nonché di un compilatore e una macchina virtuale per Erlang.
 Di seguito vengono elencati i passaggi da seguire per installare sia il client che il server dell'applicazione:
 \begin{enumerate}  
 \item
@@ -483,17 +488,19 @@ git clone https://github.com/alexprut/earth-defender.git
 \end{lstlisting}
 
 \item
-Entrare nella cartella dei file sorgenti e cambiare branch:
+Entrare nella cartella dei file sorgente e cambiare branch:
 \begin{lstlisting}[language=bash]
 cd earth-defender
 git checkout real-time-multiplayer
 \end{lstlisting}
 \end{enumerate}
 
-Ora che sono stati scaricati i file sorgenti del gioco, si procede con l'installazione del client e server. Di seguito sono le istruzione per il primo nominato:
+Ora che sono stati scaricati i file sorgente del gioco, è possibile procedere con l'installazione del client e server.
+
+\subsection{Client: installazione e configurazione}
 \begin{enumerate}  
 \item
-Entrare nella cartella dei file sorgenti del client:
+Entrare nella cartella dei file sorgente del client:
 \begin{lstlisting}[language=bash]
 cd ./client
 \end{lstlisting}
@@ -521,23 +528,17 @@ document.body.onload = function () {
 \end{lstlisting}
 \end{enumerate}
 
-Configurato il client è possibile avviare il gioco semplicemente aprendo il file \texttt{./client/index.html}. L'ultimo semplice passaggio è ai fini di demo, in una
-installazione del gioco in produzione tutti i file sorgente del client andranno ospitati su un web server, è accedibili attraverso un indirizzo url.
-Per rendere l'architettura il più realistico possibile è possibile utilizzare una machcina virtuale sul proprio pc per simulare una web server, per semplicità d'uso
-si consiglia di utilizzare \texttt{Docker}\cite{docker} ed eseguire il seguente commando:
+Configurato il client è possibile avviare il gioco semplicemente aprendo il file \texttt{./client/index.html}.
+Tale passaggio non garantisce però il corretto funzionamento dell'applicazione su tutti i browser senza l'utilizzo di un web server.
+Per rendere l'architettura il più realistico possibile si consiglia l' utilizzo di una macchina virtuale sul proprio pc per simulare un web server, in particolare, vista la sua semplicità d'uso
+si suggerisce di utilizzare \texttt{Docker}\cite{docker} con eseguire il seguente commando:
 \begin{lstlisting}[language=bash]
 docker run -p 8000:80 -v "$PWD"/client:/usr/share/nginx/html:ro nginx
 \end{lstlisting}
-Infine è sufficiente aprire il seguente indirizzo url \url{http://localhost:8000} dal proprio browser per utilizzare il client del gioco.
+In questo caso specifico è ora sufficiente aprire l'indirizzo \url{http://localhost:8000} dal proprio browser per utilizzare il client del gioco.
 
-A seguire vengono date le istruzioni per l'installazione e l'eseguzione del server.
+\subsection{Server: installazione e configurazione}
 \begin{enumerate}
-\item
-I file sorgenti del server sono all'interno della cartella \url{./server}:
-\begin{lstlisting}[language=bash]
-cd ./server
-\end{lstlisting}
-
 \item
 Installare Erlang.mk:
 \begin{lstlisting}[language=bash]
@@ -546,7 +547,13 @@ make -f erlang.mk bootstrap
 \end{lstlisting}
 
 \item
-Configurare il server (si rimanda al file di default in \texttt{./server/src/config.js} dove è incluso una configurazione generale del server), di seguito si mostra una possibile configurazione:
+I file sorgente del server sono all'interno della cartella \url{./server}:
+\begin{lstlisting}[language=bash]
+cd ./server
+\end{lstlisting}
+
+\item
+Configurare il server (si rimanda al file di default in \texttt{./server/src/config.hrl} dove è inclusa la configurazione di default che segue).
 \begin{lstlisting}[language=erlang]
 -define(EARTH_LIFE, 1000).
 -define(EARTH_LIFE_DECREASE, 100).
@@ -565,22 +572,23 @@ Installare tutte le dipendenze ed eseguire il build dell'applicazione:
 \begin{lstlisting}[language=bash]
 make
 \end{lstlisting}
-
+\end{enumerate}
+\subsection{Avvio server ed inizio comunicazione}
+\begin{enumerate}
 \item
-Eseguire il server in maniera veloce (il server dovrebbe stare in ascolto all'indirizzo \texttt{localhost:8888/websocket}):
+Lanciare il server (in maniera veloce) (il server dovrebbe stare in ascolto all'indirizzo \texttt{localhost:8888/websocket} o comunque come indicato nel file di configurazione):
 \begin{lstlisting}[language=bash]
 make run
 \end{lstlisting}
 \end{enumerate}
 
-Arrivati a questo punto è possibile provare le funzionalità del client e server.
-L'architettura creata è composta da un solo server, che è il master. Per aggiungere dei slave anche in corso dell'esecuzione dell'applicazione è sufficiente
-chiamare il seguente commando:
+Arrivati a questo punto è possibile collegare client e server.
+L'architettura creata è composta da un solo server, il quale funge anche da master. Per aggiungere gli slave (che fungono quindi da repliche) è sufficiente
+lanciare il seguente commando:
 \begin{lstlisting}[language=bash]
 ./server/_rel/earth_defender/erts-8.0.2/bin/erl -boot ./server/_rel/earth_defender/releases/1.0.0/earth_defender -sname 'ketchup' -setcookie 'earth_defender' -port 8889 -hostname "localhost" -role slave -master_name earth_defender@host
 \end{lstlisting}
-Da modificare però in modo univoco i parametri \texttt{-sname}, \texttt{-port}, \texttt{-hostname} e \texttt{-master\_name} ogni tal volta che si
-vuole aggiungere un nuovo slave all'architettura.
+Da modificare all'istanziazione di ogni nuovo slave in modo da avviare quest'ultimo su un indirizzo e porta univoci nonché con un nome del nodo univoco, per tale operazione è quindi necessario agire sui seguenti campi \texttt{-sname}, \texttt{-port}, \texttt{-hostname} e \texttt{-master\_name}.
 
 \bibliographystyle{plain}
 \bibliography{SD_Injarn_Pruteanu}
