@@ -10,8 +10,16 @@
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{listings}
+\usepackage{color}
 
-
+\lstset{ 
+  basicstyle=\small,        % the size of the fonts that are used for the code
+  commentstyle=\color{green},    % comment style
+  language=erlang,                 % the language of the code
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=3pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
+}
 
 \usepackage{fancyhdr} % Custom headers and footers
 \pagestyle{fancyplain} % Makes all pages in the document conform to the custom headers and footers
