@@ -124,11 +124,11 @@ Di seguito sono elencati brevemente e in maniera poco formale i requisiti princi
 
 In figura \ref{GenArc} è possibile osservare lo schema dell'architettura generale del sistema implementato. Le componenti principali che andremo poi a descrivere sono rappresentate dal client e dal server. Come si osserva, tra questi due vi è un canale full-duplex rappresentato, nel nostro caso, da una connessione \texttt{TCP} (protocollo \texttt{WebSocket}). E' possibile inoltre osservare che i client non comunicano tra di loro in maniera diretta ma attraverso il server master (in figura \ref{Master-Slave} è riportata l'architettura \textit{master-slave} implementata). Master e Slave invece comunicano tra loro al fine di replicare le informazioni (i vari stati di gioco) e garantire una certa disponibilità.
 
-Per permettere la modalità di gioco multiplayer viene utilizzato il protocollo \texttt{WebSocket}, questo perchè il gioco viene eseguito all'interno del browser, il protocollo \texttt{WebSocket}
-funziona su \texttt{HTTP} con comunicazione asincrona che possono avvenire concorrente.
-Siccome il browser non può ricevere una connessione, ma solo inizializzarla, connessione
-fra più client (\texttt{p2p}) non è possibile (attualmente un nuovo protocollo \texttt{WebRTC} si sta
-diffondendo per appunto permettere architetture di tipo \texttt{p2p}, purtroppo è una tecnologia ancora troppo giovane).
+Per permettere la modalità di gioco multiplayer viene utilizzato il protocollo \texttt{WebSocket}, questo perché il gioco viene eseguito all'interno del browser, il protocollo \texttt{WebSocket}
+funziona su \texttt{HTTP} con comunicazione asincrona.
+
+Poiché il browser non può ricevere richieste di connessione, ma solo inizializzarle, la connessione fra più client (\texttt{p2p}) non è permessa (attualmente un nuovo protocollo \texttt{WebRTC} si sta
+diffondendo per permettere architetture di questo tipo ma ad oggi è ancora alle prime fasi di sviluppo.
 
 \begin{figure}
 \centering
@@ -137,60 +137,16 @@ diffondendo per appunto permettere architetture di tipo \texttt{p2p}, purtroppo 
 \label{GenArc}
 \end{figure}
 
-In figura \ref{GenArc} i client non sono altri che dei browser con supporto per WebGL e WebSocket. All'inizio un client (browser) esegue una richiesta al DNS per ricevere l0indirizzo del WebServer.. Una volta ricevuta la risposta dal DNS con l'indirizzo di uno dei WebServer il client fa una richiesta e riceve tutti gli asset del gioco (js, imagini, css, ...). Il WebServer e solo responsabile per fornire gli asset del gioco, ne di più ne di meno. Infine il client si connete ad uno dei server del gioco (Erlang) e decide di creare una nuova stanza o entrare in una esistente. I server sono scritti nel linguaggio Erlang e con lo scopo primario di essere fault tolerant e distribuiti.
+I client rappresentati in \ref{GenArc} sono browser con supporto per WebGL e WebSocket.
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=\textwidth]{CAP}
-\caption{teorema di Brewer}
-\label{CAP}
-\end{figure}
-
-In un mondo ideale sarebbe molto bello avere sia Availability che Consistency allo stesso tempo.
-In un mondo reale purtroppo cio è impossibile, ed è questo che afferma il teorema di Brewer (CAP Theorem), puoi avere solo 2 cose alla volta (che sono: CP, AP oppure AC), teoriticamente parlando una soluzione AC potrebbe essere possibile, ma purtroppo noi tutti sappiamo che non esiste hardware e reti al mondo che non falliscono mai.
-Per il gioco e sistema in analisi sis è optato per un'architettura AP (cioè Availability e Partition tolerance). In un gioco soft realtime è molto più importante un sistema disponibile che consistente (almeno cosi è per questo gioco). In caso di fallimenti è preferibile perdere consistenza (risincronizzare e risolvere conflitti più avanti) e guadagnare disponibilità continua del servizio.
-
-Di seguito vengono elencati i messaggi scambiati fra il client e il server. Per la rappresentazione esterna dei dati viene utilizzato il formato JSON. Lo stesso messaggio ricevuto dal client o dal server può avere funzionalità diverse, ad esempio inizialmente il client manda un messaggio room\_list che server a chiedere al server la lista delle room disponibili, di seguito il server risponde sempre con un messaggio room\_list accompagnato dai dati. Come si può osservare il messaggio è lo stesso ma ha semantica diversa se ricevuto dal client oppure dal server, il tutto e per evitare messaggi duplicati, come add esempio: room\_list\_get, room\_list\_set, ....
-
-Sotto sono elencati i messaggi mandati dal client al server:
-\begin{itemize}
-\item \texttt{rooms\_list} (richiesta per la lista delle room disponibili)
-\item \texttt{room\_join} (richiesta per entrare in una room)
-\item \texttt{room\_add} (richiesta per creare una nuova room)
-\item \texttt{action\_earth\_collision} (segnalare che c'è stata una collisione con un'asteroide)
-\item \texttt{ship\_position} (richiesta della posizione della navicella degli altri giocatori)
-\item \texttt{game\_master\_asteroids\_position} (richiesta per la posizione degli asteroidi prima di entrare nel gioco, da un client master)
-\item \texttt{game\_ship\_position} (richiesta per la posizione delle navicelle nel gioco)
-\item \texttt{action\_ship\_move} (segnalare al server e altri client che la navicella si sta spostando)
-\item \texttt{action\_ship\_shot} (segnalare al server e altri client che la navicella ha sparato)
-\item \texttt{ping} (messaggio di heartbeat, per dire al server che si è ancora in ascolto e di non chiudere la connessione con il client)
-\end{itemize}
-
-
-Sotto sono elencati i messaggi mandati dal server al client:
-\begin{itemize}
-\item \texttt{room\_list} (restituisce un elenco delle room disponibili)
-\item \texttt{player\_id} (l'identificativo univoco del client)
-\item \texttt{room\_players\_number} (numero di giocatori all'interno di una room)
-\item \texttt{game\_life} (vita rimasta della terra )
-\item \texttt{asteroid\_position} (richiesta per l'invio della posizione degli asteroidi al server)
-\item \texttt{asteroid\_position\_set} (messaggio per impostare la nuova posizione degli asteroidi)
-\item \texttt{ship\_position\_set} (messaggio per impostare la nuova posizione della navicella spaziale)
-\item \texttt{ship\_shoot} (segnala che un altro utente ha sparato)
-\item \texttt{servers\_list} (la lista dei server)
-\item \texttt{server\_error} (un fallimento nel server)
-\item \texttt{game\_reconnect} (risposta affermativa alla richiesta di riconessione al gioco)
-\item \texttt{room\_id} (l'identificativo univoco della room)
-\item \texttt{pong} (messaggio di heartbeat, risposta al messaggio ping)
-\item \texttt{servers\_list\_redirect} (segnala al client la lista aggiornata dei server e di ricontattarne uno)
-\item \texttt{remove\_ship\_scene} (messaggio usato per rimuovere una navicella spaziale dalla scena del gioco se un utente si scollega)
-\end{itemize}
+Durante la prima fase di collegamento, il client manda una richiesta al \texttt{DNS} per ricevere l'indirizzo del \texttt{WebServer}.
+Una volta ricevuta la risposta dal \texttt{DNS} con l'indirizzo di uno dei possibili \texttt{WebServer} il client può iniziare a ricevere tutti gli asset del gioco (js, imagini, css, ...). Il \texttt{WebServer}, nel nostro caso, ha il solo compito di fornire gli asset del gioco. Come ultima operazione, il client si connette ad uno dei server del gioco. I server sono scritti nel linguaggio Erlang e con lo scopo primario di essere \textit{fault tolerant} e \textit{distribuiti}.
 
 
 \subsection{Architettura client}
-Per realizzare le funzionalità visuali e interazione del gioco, al client è stata data le precedenti nominate responsabilità, cioè il compito della logica e rendering del gioco che sono sotto controllo di un arbitro che è il server.
-L'ambiente scelto per esecuzione del client è all'interno di un browser, la motivazione di una tale scelta sono le varie tecnologie, \texttt{API}, primitive e protocolli
-implementati di default che facilitano lo sviluppo e la compatibilità con varie piattaforme.
+Il client si occupa della logica (sotto la supervisione del server che funge da arbitro) e di tutto il rendering del gioco.
+L'ambiente scelto per l'esecuzione del client è il browser; la motivazione di tale scelta sta le varie tecnologie messe a disposizione che ne hanno facilitato l'implementazione e rendono compatibile con molte piattaforme: \texttt{API}, primitive e protocolli.
+
 Per l'implementazione del client sono stati utilizzati i linguaggi di markup \texttt{HTML}e \texttt{CSS} ed il linguaggio di programmazione \texttt{JavaScript}.
 Le tecnologie principali utilizzate per la realizzazione del client sono:
 \begin{itemize}
@@ -198,8 +154,12 @@ Le tecnologie principali utilizzate per la realizzazione del client sono:
 \item il protocollo \texttt{WebSocket} \cite{websocket} per la comunicazione.
 \end{itemize}
 
-Purtroppo un limite imposto dal browser è il modo di comunicazione con gli altri client o server. Le scelte a disposizione sono il classico protocollo \texttt{HTTP}, \texttt{WebSocket} oppure \texttt{WebRTC}. L'ultimo protocollo elencato permette la comunicazione fra i vari client (browser), cioè un'architettura \texttt{P2P}, purtroppo il
-protocollo è ancora giovane e non supportato dai vari browser, per questo motivo è stato scelto il protocollo \texttt{WebSocket}. Tale scelta ha influenzato l'architettura
+Uno degli svantaggi di questa architettura è dato da un limite imposto dal browser nel modo di comunicazione. Le scelte a disposizione per tale operazione possono ricadere nel classico protocollo \texttt{HTTP}, \texttt{WebSocket} oppure \texttt{WebRTC}.
+
+L'ultimo protocollo elencato permette la comunicazione fra i vari client (browser), permettendo quindi di ottenere un'architettura \texttt{p2p}, tuttavia il
+protocollo essendo ancora alle prime fasi di sviluppo, non è supportato dai vari browser, per questo motivo è stato scelto il protocollo \texttt{WebSocket}. 
+
+Tale scelta ha influenzato l'architettura
 generale del sistema, essendo un protocollo che è basato sul \texttt{HTTP} e non permettendo di aprire una connessione se non richiesta dal browser stesso ha costretto
 ad utilizzare dei server che implementano il protocollo \texttt{HTTP} e ha tolto ogni possibile architettura del \texttt{P2P} fra i vari client.
 
@@ -217,8 +177,8 @@ Rimandiamo alla sezione di ? Documentazione Tecnica per una più dettagliata des
 \end{figure}
 
 \subsection{Erlang}
-La scelta del linguaggio per la realizzazione del server è Erlang v.18 \cite{erlang}. Erlang è un linguaggio funzionale, con primitive
-per facilitare la communicazione iter-processi/nodi e ampiamente utilizzato per la realizzazione di sistemi distribuiti, real soft-time,
+Il linguaggio scelto per l'implementazione del server è Erlang v.18 \cite{erlang}. Erlang è un linguaggio funzionale, con primitive
+per facilitare la comunicazione iter-processi/nodi e ampiamente utilizzato per la realizzazione di sistemi distribuiti, real soft-time,
 applicazioni non-stop e fault-tolerant.
 Tale scelta è sembrata naturale date le funzionalità primitive implementate dal linguaggio e gli scopi della nascita del linguaggio stesso.
 Le funzionalità di maggior rilievo che successivamente sono state utilizzate nell'implementazione sono la possibilità di monitorare 
@@ -228,7 +188,7 @@ di grande supporto per la realizazzione del server del gioco \cite{erlang-monito
 
 
 \subsection{Cowboy 2.0}
-Come server \texttt{HTTP} e implementazione del protocollo WebSocket  è stato deciso di utilizzare \href{https://github.com/ninenines/cowboy}{Cowboy}, una libreria interamente scritta in Erlang che fornisce un ottimo supporto per le WebSocket (tutte le versioni sia standard che non definitive), modello su cui è basato il progetto.
+Come server \texttt{HTTP} e implementazione del protocollo WebSocket  è stato deciso di utilizzare Cowboy \cite{cowboy}, una libreria interamente scritta in Erlang che fornisce un ottimo supporto per le WebSocket (tutte le versioni sia standard che non definitive), modello su cui è basato il progetto.
 Uno dei punti di forza di Cowboy sicuramente è la semplicità del codice. I 3 moduli principali che verranno descritti nel dettaglio nella sezione successiva sono di facile comprensione e composti ciascuno da poche righe di codice di base ben documentato, da arricchire, ovviamente, secondo le esigenze del programmatore.
 
 \subsection{Rappresentazione esterna dei dati}
@@ -406,6 +366,10 @@ La funzione \texttt{handle\_info/2} rimane in ascolto di eventuali messaggi ed i
 
 \subsection{Teorema CAP}
 In base all'architettura proposta e alle scelte implementative fatte, in figura \ref{CAP} è possibile osservare la posizione del sistema implementato rispetto alle 3 principali garanzie che un sistema distribuito dovrebbe fornire (ricordando che è impossibile fornirle contemporaneamente tutte insieme ma al più due allo stesso tempo).
+
+Il progetto è stato implementato cercando di offrire un alto livello di disponibilità e tolleranza di partizione a discapito, purtroppo, della consistenza, aspetto sicuramente molto importante per un gioco real-time.
+
+Di seguito la descrizione dei tre punti del teorema e le strategie adottate al fine di cercare di mantenere una certa consistenza.
 \begin{figure}
 \centering
 \includegraphics[width=8cm]{CAP}
@@ -434,6 +398,45 @@ Per mantenere una buona coerenza, essendo nel caso specifico problematico soprat
 Nella seguente sezione si vuole illustrare in maniera più tecnica come avviene la comunicazione tra client e server, alcuni dettagli implementativi e problematiche riscontrate.
 
 La figura \ref{ServerArc} potrebbe trarre in inganno inducendo il lettore a pensare che l'architettura client/server sia di tipo \textit{richiesta/risposta} (comune per server HTTP) ma avendo utilizzato una WebSocket, è possibile sia fare richieste (client $\rightarrow$ server) senza necessariamente attendere una risposta che ricevere risposte (server $\rightarrow$ client) senza necessariamente aver fatto alcuna richiesta, scelta vincente quindi per il tipo di applicazione implementata (si provi a pensare infatti ad un gioco real time con \textit{send/receive} bloccanti).
+
+\subsection{Messaggi scambiati tra client e server}
+
+Di seguito vengono elencati i messaggi scambiati fra il client e il server. Per la rappresentazione esterna dei dati viene utilizzato il formato JSON. Lo stesso messaggio ricevuto dal client o dal server può avere funzionalità diverse, ad esempio inizialmente il client manda un messaggio \texttt{room\_list} per chiedere al server di restituire la lista delle room disponibili, quest'ultimo risponde con un messaggio \texttt{room\_list} accompagnato dai dati. Come si può osservare il messaggio è lo stesso ma ha semantica diversa se ricevuto dal client oppure dal server, ciò per evitare messaggi duplicati, come ad esempio: \texttt{room\_list\_get}, \texttt{room\_list\_set}, etc.
+
+\subsubsection{Messaggi client $\rightarrow$ server}
+\begin{itemize}
+\item \texttt{[rooms\_list,null]}: richiesta per la lista delle room disponibili;
+\item \texttt{[room\_join,room\_id]}: richiesta per entrare in una room;
+\item \texttt{[room\_add,null]}: richiesta per creare una nuova room;
+\item \texttt{[action\_earth\_collision,null]}: segnalare che c'è stata una collisione con un'asteroide;
+\item \texttt{[ship\_position,[ship\_id,x,y,z]]}: aggiornamento nel server della posizione della navicella al momento del join nella room;
+\item \texttt{[game\_master\_asteroids\_position,null]}: richiesta per ottenere la posizione degli asteroidi prima di entrare nella room;
+\item \texttt{[game\_ship\_position,[ship\_id,x,y,z]]}: richiesta per ottenere la posizione delle navicelle nel gioco;
+\item \texttt{[action\_ship\_move,[ship\_id,direction]]}: aggiornamento della nuova posizione della navicella;
+\item \texttt{[action\_ship\_shot,ship\_id]}: segnalare al server che la navicella sta sparando;
+\item \texttt{[game\_reconnect,[room\_id,player\_id,ship\_id]]}: richiesta di riconnessione;
+\item \texttt{ping}: messaggio di heartbeat, per informare il server che si è ancora in ascolto e di non chiudere la connessione con il client;
+\end{itemize}
+
+
+\subsubsection{Messaggi server $\rightarrow$ client}
+\begin{itemize}
+\item \texttt{[room\_list, list]}: restituisce la lista delle room disponibili;
+\item \texttt{[player\_id, id]}: l'identificativo univoco assegnato al client dal server stesso;
+\item \texttt{[room\_players\_number, num]}: numero di giocatori all'interno di una specifica room;
+\item \texttt{[game\_life, value]}: vita rimasta della Terra;
+\item \texttt{[asteroid\_position,[position]]}: richiesta per l'invio della posizione degli asteroidi al server;
+\item \texttt{[asteroid\_position\_set,[position]]}: messaggio per impostare la nuova posizione degli asteroidi;
+\item \texttt{[ship\_position\_set,[ships\_position]]}: messaggio per impostare la nuova posizione di tutte le navicelle;
+\item \texttt{[ship\_shoot,ship\_id]}: segnala che la navicella \texttt{ship\_id} sta sparando;
+\item \texttt{[servers\_list,list]}: restituisce la lista dei server;
+\item \texttt{[server\_error,msg]}: restituisce un fallimento nel server;
+\item \texttt{[game\_reconnect,state]}: risposta ad una richiesta di riconnessione;
+\item \texttt{[room\_id,id]}: l'identificativo univoco della room;
+\item \texttt{[pong]}: messaggio di heartbeat, risposta al messaggio ping;
+\item \texttt{[servers\_list\_redirect,list]}: segnala al client la lista aggiornata dei server;
+\item \texttt{[remove\_ship\_scene, ship\_id]}: messaggio usato per rimuovere una navicella spaziale dalla scena del gioco nel momento in cui un player viene rimosso;
+\end{itemize}
 
 \subsection{Handshake}
 Come già accennato precedentemente, il protocollo di comunicazione utilizzato, appoggiandosi su TCP offre già molte garanzie permettendo di risparmiare un notevole numero di controlli e allo stesso tempo di sfruttare alcune caratteristiche per la gestione di eventuali fallimenti sia da parte dei client che da parte dei server.
