@@ -133,6 +133,52 @@ button:hover {
 	line-height: 100px;
 }
 
+/* Instructions */
+#instructions {
+	position: absolute;
+	bottom: 20px;
+	width: 400px;
+	left: 50%;
+	padding: 0;
+	margin: 0;
+	margin-left: -200px;
+}
+
+#instructions .move {
+	display: inline-block;
+	width: 114px;
+}
+
+#instructions .shoot {
+	display: inline-block;
+	width: 270px;
+}
+
+#instructions .key {
+	text-align: center;
+	width: 30px;
+	height: 30px;
+	vertical-align: middle;
+	color: white;
+	line-height: 30px;
+	display: inline-block;
+	border: 1px solid white;
+	border-radius: 5px;
+	text-transform: uppercase;
+	margin: 3px;
+}
+
+#instructions .key-w {
+	display: block;
+	margin: 0 auto;
+}
+
+#instructions .key-space {
+	display: block;
+	margin: 0 auto;
+	min-width: 200px;
+}
+
 /* Debug */
 body .dg.ac {
 	right: 0;
