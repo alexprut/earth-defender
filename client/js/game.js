@@ -429,6 +429,7 @@ Game.prototype.pause = function (msg) {
     this.DOMHandler.setMessage(msg);
 };
 Game.prototype.start = function () {
+    this.DOMHandler.clearMessage();
     if (this.requestAnimationFrameId) {
         this.render();
     } else {
