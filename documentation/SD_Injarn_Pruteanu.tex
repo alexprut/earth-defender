@@ -50,7 +50,7 @@
 \normalfont \normalsize 
 \textsc{Sistemi Distribuiti, Università degli studi di Udine} \\ [25pt] % Your university, school and/or department name(s)
 \horrule{0.5pt} \\[0.4cm] % Thin top horizontal rule
-\huge Distribute a soft real-time 3D multiplayer game\\% The assignment title
+\huge Distributed soft real-time 3D multiplayer game\\% The assignment title
 \horrule{2pt} \\[0.5cm] % Thick bottom horizontal rule
 }
 
@@ -69,7 +69,7 @@
 
 Il seguente progetto consiste nell'implementazione di un gioco in prima persona,
 real-time e distribuito. Lo scopo principale è di realizzare l'applicazione tenendo
-conto soprattutto di aspetti che riguardano, in particolare, la comunicazione
+conto soprattutto di aspetti che riguardano la comunicazione
 (cioè affidabilità, consistenza e disponibilità del servizio)
 
 \section{Analisi dei requisiti}
@@ -111,7 +111,7 @@ Di seguito sono brevemente elencati alcuni requisiti principali del gioco e del 
 \begin{enumerate}
 \item Il sistema deve dare la massima trasparenza all'utente per quanto riguarda la comunicazione tra i vari moduli. L'utente deve poter avviare l'applicazione (il client) e poter iniziare a giocare la partita.
 \item Ogni giocatore può giocare una partita (entrare in una room) singleplayer oppure multiplayer
-\item In modalità multiplayer tutti gli utenti devono vedere gli stessi elementi del gioco, nella stessa posizione e stato, cioè devono essere il più possibile sincronizzati
+\item In modalità multiplayer tutti gli utenti devono vedere lo stesso stato, ovvero tutti gli elementi del gioco devono essere il più possibile sincronizzati
 \item Nel caso di un guasto del server deve essere completamente trasparante per l'utente finale, il gioco devo poter proseguire senza problemi
 \item Ogni utente può sparare dalla propria navicella spaziale e distruggere gli asteroidi
 \item Per ogni asteroide distrutto viene assegnato un punteggio
@@ -155,7 +155,7 @@ Il \texttt{WebServer}, nel nostro caso, ha il solo compito di fornire gli asset 
 Il client si occupa della logica (sotto la supervisione del server che funge da arbitro) e di tutto il rendering del gioco.
 L'ambiente scelto per l'esecuzione del client è il browser; la motivazione di tale scelta sta nelle varie tecnologie messe a disposizione che ne hanno facilitato l'implementazione e rendono compatibile con molte piattaforme: \texttt{API}, primitive e protocolli.
 
-Per l'implementazione del client sono stati utilizzati i linguaggi di markup \texttt{HTML}e \texttt{CSS} ed il linguaggio di programmazione \texttt{JavaScript}.
+Per l'implementazione del client sono stati utilizzati i linguaggi di markup \texttt{HTML} e \texttt{CSS} ed il linguaggio di programmazione \texttt{JavaScript}.
 
 Le tecnologie principali utilizzate per la realizzazione del client sono:
 \begin{itemize}
@@ -176,7 +176,7 @@ Si rimanda alla sezione \ref{DocumentazioneTecnica} per una più dettagliata des
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{ClientArchitecture}
+\includegraphics[scale=0.5]{ClientArchitecture}
 \caption{Architettura del client}
 \label{ClientArc}
 \end{figure}
@@ -211,7 +211,7 @@ In particolare per semplificare ancor di più la sintassi e semantica del format
 messaggi del tipo: \texttt{[Event, Data]} dove evento generalmente indica un azione da compiere accompagnata da eventuali dati.
 
 Il \texttt{Dato} può essere di tipo base o composto.
-A volte è necessario mandare messaggi con solo l'evento e nessun tipo di dato, in quel caso il campo \texttt{Data} può assumere valore \texttt{null}, e.g. \texttt{[''evento'', null]}.
+A volte è necessario mandare messaggi con solo l'evento e nessun tipo di dato, in quel caso il campo \texttt{Data} può assumere valore \texttt{null}, es: \texttt{[''evento'', null]}.
 
 Quando un processo erlang riceve un messaggio in formato \texttt{JSON}, deve innanzitutto decodificarlo per poterlo consumare, purtroppo però non ci sono librerie e primitive di linguaggio predefinite per la codifica e decodifica dei messaggi in formato \texttt{JSON}.
 
@@ -344,7 +344,7 @@ La scelta progettuale fatta in questa fase, potrebbe, giustamente, indurre il le
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{Master-Slave}
+\includegraphics[scale=0.5]{Master-Slave}
 \caption{Architettura Master-Slaves implementata}
 \label{Master-Slave}
 \end{figure}
@@ -376,8 +376,6 @@ start_link() ->
   gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 \end{lstlisting}
 un generico processo server che fornisce delle funzionalità standard per tracciare e segnalare errori, utile quindi nel caso specifico dove è presente un supervisore che controlla altri nodi.
-
-Nelle prime fasi di implementazione del progetto questo era l'unico modulo ad utilizzare \texttt{gen\_server}, successivamente è stato introdotto in quasi tutti i restanti moduli. 
 
 \item \texttt{room}: modulo che tiene traccia dei player iscritti e dello stato della singola room (posizione navi spaziali, valore della vita, posizione asteroidi, etc\dots).
 La funzione \texttt{handle\_info/2} rimane in ascolto di eventuali messaggi ed in generale si occupa di mantenere ed aggiornare lo stato di gioco tra gli iscritti alla room e all'occorrenza inoltrare in broadcast gli aggiornamenti.
@@ -411,7 +409,7 @@ Per cercare di mantenere un alto livello di coerenza tenendo conto quindi di pos
 
 Per mantenere una buona coerenza, essendo nel caso specifico problematico soprattutto la sincronizzazione dei vari client, avrebbe sicuramente aiutato l'utilizzo di un orologio globale.
 \item \textit{Disponibilità}: L'architettura proposta, composta da un master e le relative repliche con, inoltre, la presenza di un modulo supervisore che si occupa di riavviare eventuali processi che muoiono ha reso il sistema in grado di rispondere ad ogni richiesta. Si precisa che più repliche vengono stanziate, maggiore sarà la disponibilità del sistema.
-\item \textit{Tolleranza di partizione}: In caso di perdita di messaggi il sistema continua comunque a funzionare ma ciò potrebbe causare una forte incoerenza, un esempio potrebbe essere la mancata comunicazione di collisione da parte dell'ultimo client che ha fatto il join nella room (se si vuole riprendere l'esempio precedente), ciò non impedisce il corretto funzionamento del sistema ma gli altri giocatori che vedono nella propria scena collidere un asteroide senza che il punteggio di aggiorni potrebbero osservare un certo stato di incoerenza.
+\item \textit{Tolleranza di partizione}: In caso di perdita di messaggi il sistema continua comunque a funzionare ma ciò potrebbe causare una forte incoerenza, un esempio potrebbe essere la mancata comunicazione di collisione da parte dell'ultimo client che ha fatto il join nella room (se si vuole riprendere l'esempio precedente), ciò non impedisce il corretto funzionamento del sistema ma gli altri giocatori che vedono nella propria scena collidere un asteroide senza che il punteggio si aggiorni potrebbero osservare un certo stato di incoerenza.
 \end{itemize}
 
 \section{Documentazione tecnica}
@@ -422,7 +420,9 @@ La figura \ref{ServerArc} potrebbe trarre in inganno inducendo il lettore a pens
 
 \subsection{Messaggi scambiati tra client e server}
 
-Di seguito vengono elencati i messaggi scambiati fra il client e il server. Per la rappresentazione esterna dei dati viene utilizzato il formato JSON. Lo stesso messaggio ricevuto dal client o dal server può avere funzionalità diverse, ad esempio inizialmente il client manda un messaggio \texttt{room\_list} per chiedere al server di restituire la lista delle room disponibili, quest'ultimo risponde con un messaggio \texttt{room\_list} accompagnato dai dati. Come si può osservare il messaggio è lo stesso ma ha semantica diversa se ricevuto dal client oppure dal server, ciò per evitare messaggi duplicati, come ad esempio: \texttt{room\_list\_get}, \texttt{room\_list\_set}, etc.
+Di seguito vengono elencati i messaggi scambiati fra il client e il server.
+
+  Lo stesso messaggio ricevuto dal client o dal server può avere funzionalità diverse, ad esempio inizialmente il client manda un messaggio \texttt{room\_list} per chiedere al server di restituire la lista delle room disponibili, quest'ultimo risponde con un messaggio \texttt{room\_list} accompagnato dai dati. Come si può osservare il messaggio è lo stesso ma ha semantica diversa se ricevuto dal client oppure dal server, ciò per evitare messaggi duplicati, come ad esempio: \texttt{room\_list\_get}, \texttt{room\_list\_set}, etc.
 
 \subsubsection{Messaggi client $\rightarrow$ server}
 \begin{itemize}
@@ -483,7 +483,7 @@ In figura \ref{CreateRoom} è possibile osservare quali sono le fasi di scambio 
 
 \begin{figure}
 \centering
-\includegraphics[width=10cm]{MultiplayerCreateRoom}
+\includegraphics[scale=0.9]{MultiplayerCreateRoom}
 \caption{Create Room in modalità Multiplayer}
 \label{CreateRoom}
 \end{figure}
@@ -521,7 +521,7 @@ L'operazione di \texttt{send()} del client viene inoltrata al modulo erlang \tex
           reply([<<"room_id">>, Room_id], New_state);
 \end{lstlisting}
 
-Come è possibile osservare dal codice sopra, viene assegnato un nome unico identificativo alla room ed inserita nello stato del modulo \texttt{global\_room\_state}, il quale presenta al suo interno un campo di tipo record contenente la lista di tutte le room
+Come è possibile osservare dal codice sopra, viene assegnato un nome unico identificativo alla room ed inserita nello stato del modulo \texttt{local\_rooms\_state}, il quale presenta al suo interno un campo di tipo record contenente la lista di tutte le room
 \begin{lstlisting}[basicstyle=\footnotesize]
 -record(state, {rooms = [], slaves = [], role}).
 \end{lstlisting}
@@ -552,7 +552,7 @@ In figura \ref{JoinRoom} è possibile osservare quali sono le fasi di scambio me
 
 \begin{figure}
 \centering
-\includegraphics[width=10cm]{MultiplayerJoinRoom}
+\includegraphics[scale=0.9]{MultiplayerJoinRoom}
 \caption{Join Room in modalità Multiplayer}
 \label{JoinRoom}
 \end{figure}
