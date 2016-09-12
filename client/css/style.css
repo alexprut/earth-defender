@@ -137,21 +137,30 @@ button:hover {
 #instructions {
 	position: absolute;
 	bottom: 20px;
-	width: 400px;
+	width: 500px;
 	left: 50%;
 	padding: 0;
 	margin: 0;
-	margin-left: -200px;
+	margin-left: -250px;
+	text-align: center;
 }
 
 #instructions .move {
 	display: inline-block;
 	width: 114px;
+	text-align: center;
+}
+
+#instructions .move-y {
+	display: inline-block;
+	width: 100px;
+	text-align: center;
 }
 
 #instructions .shoot {
 	display: inline-block;
-	width: 270px;
+	width: 210px;
+	text-align: center;
 }
 
 #instructions .key {
