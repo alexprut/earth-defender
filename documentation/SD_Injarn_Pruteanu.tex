@@ -73,16 +73,51 @@ conto soprattutto di aspetti che riguardano, in particolare, la comunicazione
 (cioè affidabilità, consistenza e disponibilità del servizio)
 
 \section{Analisi dei requisiti}
-\subsection{Scopo}
-Permettere a uno o più utenti di poter comandare una nave spaziale al fine di difendere il pianeta terra dalla minaccia degli asteroidi. Nel secondo caso, ogni utente deve vedere singolarmente le azioni degli altri utenti e lo stato globale del sistema deve essere uguale per tutti.
+Lo scopo del gioco è permettere a uno o più utenti di poter comandare una nave spaziale al fine di difendere il pianeta terra dalla minaccia degli asteroidi.
+Una partita del gioco (riferito nella relazione e codice con il nome: ``room'') può essere giocata da un giocatore singolo (singleplayer) o da più
+giocatori conteporaneamente (multiplayer), in figura \ref{EarthDefenderGameMode} è illustrata la modalità di scelta del tipo della partita.
+Nel secondo caso, ogni utente deve vedere singolarmente le azioni degli altri utenti e lo stato globale del sistema deve essere uguale per tutti.
+Gli elementi della scena all'interno del gioco sono:
+\begin{itemize}
+\item \texttt{asteroidi} (un numero finito, di default 200, che colpiscono la terra)
+\item \texttt{astronavi} (riferito nella relazione e codice con il nome ``spaceship'', è la parte comandata dall'utente, c'è ne una per ogni giocatore nel gioco)
+\item \texttt{proiettili} (ogni spaceship può sparare per colpire gli asteroidi) 
+\item \texttt{la terra}
+\item \texttt{la luna} (pianetta che gira intorno alla terra)
+\item \texttt{il sole}
+\end{itemize}
+
+Nella modalità multiplayer, gli elementi del gioco che devono essere sincronizzati sono gli asteroidi, le astronavi e i proiettili.
+Riguardo ai pianetti: terra, luna e sole non è necessario sincronizzare il loro spostamento ai fini del gioco, quindi più player possono vedere
+i i pianetti in posti diversi, tale scelta è per semplificare
+lo scambio dei messaggi fra gli utenti e server. In figura \ref{EarthDefenderMultiplayer} sono illustrati gli elementi del gioco in una partita multiplayer.
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{EarthDefenderGameMode}
+\caption{Selezione della modalità di gioco}
+\label{EarthDefenderGameMode}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{EarthDefenderMultiplayer}
+\caption{Modalità Multiplayer del gioco}
+\label{EarthDefenderMultiplayer}
+\end{figure}
+
 \subsection{Requisiti}
+Di seguito sono elencati brevemente e in maniera poco formale i requisiti principali del gioco e sistema.
 \begin{enumerate}
 \item Il sistema deve dare la massima trasparenza all'utente per quanto riguarda la comunicazione tra i vari moduli. L'utente deve poter avviare l'applicazione (il client) e poter iniziare a giocare la partita.
-\item 
-\item
-\item
-\item
-\item
+\item Ogni giocatore può giocare una partita (entrare in una room) singleplayer oppure multiplayer
+\item In modalità multiplayer tutti gli utenti devono vedere gli stessi elementi del gioco, nella stessa posizione e stato, cioè devono essere il più possibile sincronizzati
+\item Nel caso di un guasto del server deve essere completamente trasparante per l'utente finale, il gioco devo poter proseguire senza problemi
+\item Ogni utente può sparare dalla propria navicella spaziale e distruggere gli asteroidi
+\item Per ogni asteroide distrutto viene assegnato un punteggio
+\item Per ogni asteroide che colpisce la terra viene tolta la vita alla terra
+\item La partita termina quando la terra rimane senza vita
+\item L'utente che distrugge più asteroidi all'interno di una partita vince
 \end{enumerate}
 
 \section{Architettura e Design}
