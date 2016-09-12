@@ -50,7 +50,7 @@
 \normalfont \normalsize 
 \textsc{Sistemi Distribuiti, Università degli studi di Udine} \\ [25pt] % Your university, school and/or department name(s)
 \horrule{0.5pt} \\[0.4cm] % Thin top horizontal rule
-\huge Distribute a soft real-time 3d multiplayer game\\% The assignment title
+\huge Distribute a soft real-time 3D multiplayer game\\% The assignment title
 \horrule{2pt} \\[0.5cm] % Thick bottom horizontal rule
 }
 
@@ -77,20 +77,20 @@ Lo scopo del gioco è permettere a uno o più utenti di poter comandare una nave
 Una partita del gioco (riferito nella relazione e codice con il nome: ``room'') può essere giocata da un giocatore singolo (singleplayer) o da più
 giocatori conteporaneamente (multiplayer), in figura \ref{EarthDefenderGameMode} è illustrata la modalità di scelta del tipo della partita.
 Nel secondo caso, ogni utente deve vedere singolarmente le azioni degli altri utenti e lo stato globale del sistema deve essere uguale per tutti.
+
 Gli elementi della scena all'interno del gioco sono:
 \begin{itemize}
-\item \texttt{asteroidi} (un numero finito, di default 200, che colpiscono la terra)
-\item \texttt{astronavi} (riferito nella relazione e codice con il nome ``spaceship'', è la parte comandata dall'utente, c'è ne una per ogni giocatore nel gioco)
-\item \texttt{proiettili} (ogni spaceship può sparare per colpire gli asteroidi) 
+\item \texttt{asteroidi}: un numero finito, di default 200, che colpiscono la terra
+\item \texttt{astronavi}: riferito nella relazione e codice con il nome ``spaceship'', è l'oggetto utilizzato dall'utente per interagire con il sistema;
+\item \texttt{proiettili}: ogni spaceship può sparare per colpire gli asteroidi;
 \item \texttt{la terra}
-\item \texttt{la luna} (pianetta che gira intorno alla terra)
+\item \texttt{la luna}
 \item \texttt{il sole}
 \end{itemize}
 
-Nella modalità multiplayer, gli elementi del gioco che devono essere sincronizzati sono gli asteroidi, le astronavi e i proiettili.
-Riguardo ai pianetti: terra, luna e sole non è necessario sincronizzare il loro spostamento ai fini del gioco, quindi più player possono vedere
-i i pianetti in posti diversi, tale scelta è per semplificare
-lo scambio dei messaggi fra gli utenti e server. In figura \ref{EarthDefenderMultiplayer} sono illustrati gli elementi del gioco in una partita multiplayer.
+Nella modalità multiplayer, gli elementi del gioco che devono essere sincronizzati sono gli asteroidi, le astronavi e i proiettili, mentre terra, luna e sole sono solo a scopo decorativo e per questo motivo non vengono sincronizzatori.
+
+In figura \ref{EarthDefenderMultiplayer} sono illustrati gli elementi del gioco in una partita multiplayer.
 
 \begin{figure}
 \centering
@@ -107,7 +107,7 @@ lo scambio dei messaggi fra gli utenti e server. In figura \ref{EarthDefenderMul
 \end{figure}
 
 \subsection{Requisiti}
-Di seguito sono elencati brevemente e in maniera poco formale i requisiti principali del gioco e sistema.
+Di seguito sono brevemente elencati alcuni requisiti principali del gioco e del sistema.
 \begin{enumerate}
 \item Il sistema deve dare la massima trasparenza all'utente per quanto riguarda la comunicazione tra i vari moduli. L'utente deve poter avviare l'applicazione (il client) e poter iniziare a giocare la partita.
 \item Ogni giocatore può giocare una partita (entrare in una room) singleplayer oppure multiplayer
@@ -122,7 +122,13 @@ Di seguito sono elencati brevemente e in maniera poco formale i requisiti princi
 
 \section{Architettura e Design}
 
-In figura \ref{GenArc} è possibile osservare lo schema dell'architettura generale del sistema implementato. Le componenti principali che andremo poi a descrivere sono rappresentate dal client e dal server. Come si osserva, tra questi due vi è un canale full-duplex rappresentato, nel nostro caso, da una connessione \texttt{TCP} (protocollo \texttt{WebSocket}). E' possibile inoltre osservare che i client non comunicano tra di loro in maniera diretta ma attraverso il server master (in figura \ref{Master-Slave} è riportata l'architettura \textit{master-slave} implementata). Master e Slave invece comunicano tra loro al fine di replicare le informazioni (i vari stati di gioco) e garantire una certa disponibilità.
+In figura \ref{GenArc} è possibile osservare lo schema dell'architettura generale del sistema implementato.
+
+Le componenti principali che andremo poi a descrivere sono rappresentate dal client e dal server. Come si osserva, tra questi due vi è un canale full-duplex rappresentato, nel nostro caso, da una connessione \texttt{TCP} (protocollo \texttt{WebSocket}).
+
+E' possibile inoltre osservare che i client non comunicano tra di loro in maniera diretta ma attraverso il server master (in figura \ref{Master-Slave} è riportata l'architettura \textit{master-slave} implementata).
+
+Master e Slave invece comunicano tra loro al fine di replicare le informazioni (i vari stati di gioco) e garantire una certa disponibilità.
 
 Per permettere la modalità di gioco multiplayer viene utilizzato il protocollo \texttt{WebSocket}, questo perché il gioco viene eseguito all'interno del browser, il protocollo \texttt{WebSocket}
 funziona su \texttt{HTTP} con comunicazione asincrona.
@@ -140,34 +146,33 @@ diffondendo per permettere architetture di questo tipo ma ad oggi è ancora alle
 I client rappresentati in \ref{GenArc} sono browser con supporto per WebGL e WebSocket.
 
 Durante la prima fase di collegamento, il client manda una richiesta al \texttt{DNS} per ricevere l'indirizzo del \texttt{WebServer}.
-Una volta ricevuta la risposta dal \texttt{DNS} con l'indirizzo di uno dei possibili \texttt{WebServer} il client può iniziare a ricevere tutti gli asset del gioco (js, imagini, css, ...). Il \texttt{WebServer}, nel nostro caso, ha il solo compito di fornire gli asset del gioco. Come ultima operazione, il client si connette ad uno dei server del gioco. I server sono scritti nel linguaggio Erlang e con lo scopo primario di essere \textit{fault tolerant} e \textit{distribuiti}.
+Una volta ricevuta la risposta dal \texttt{DNS} con l'indirizzo di uno dei possibili \texttt{WebServer} il client può iniziare a ricevere tutti gli asset del gioco (js, imagini, css, ...).
+
+Il \texttt{WebServer}, nel nostro caso, ha il solo compito di fornire gli asset del gioco. Come ultima operazione, il client si connette ad uno dei server del gioco. I server sono scritti nel linguaggio Erlang e con lo scopo primario di essere \textit{fault tolerant} e \textit{distribuiti}.
 
 
 \subsection{Architettura client}
 Il client si occupa della logica (sotto la supervisione del server che funge da arbitro) e di tutto il rendering del gioco.
-L'ambiente scelto per l'esecuzione del client è il browser; la motivazione di tale scelta sta le varie tecnologie messe a disposizione che ne hanno facilitato l'implementazione e rendono compatibile con molte piattaforme: \texttt{API}, primitive e protocolli.
+L'ambiente scelto per l'esecuzione del client è il browser; la motivazione di tale scelta sta nelle varie tecnologie messe a disposizione che ne hanno facilitato l'implementazione e rendono compatibile con molte piattaforme: \texttt{API}, primitive e protocolli.
 
 Per l'implementazione del client sono stati utilizzati i linguaggi di markup \texttt{HTML}e \texttt{CSS} ed il linguaggio di programmazione \texttt{JavaScript}.
+
 Le tecnologie principali utilizzate per la realizzazione del client sono:
 \begin{itemize}
 \item la libreria \texttt{three.js} \cite{threejs} utilizzata per implementare il rendering del gioco in \texttt{3D};
 \item il protocollo \texttt{WebSocket} \cite{websocket} per la comunicazione.
 \end{itemize}
 
-Uno degli svantaggi di questa architettura è dato da un limite imposto dal browser nel modo di comunicazione. Le scelte a disposizione per tale operazione possono ricadere nel classico protocollo \texttt{HTTP}, \texttt{WebSocket} oppure \texttt{WebRTC}.
+Uno degli svantaggi di questa architettura è dato da un limite imposto dal browser nel modo di comunicare. Le scelte a disposizione per tale operazione possono ricadere nel classico protocollo \texttt{HTTP}, \texttt{WebSocket} oppure \texttt{WebRTC}.
 
 L'ultimo protocollo elencato permette la comunicazione fra i vari client (browser), permettendo quindi di ottenere un'architettura \texttt{p2p}, tuttavia il
 protocollo essendo ancora alle prime fasi di sviluppo, non è supportato dai vari browser, per questo motivo è stato scelto il protocollo \texttt{WebSocket}. 
 
 Tale scelta ha influenzato l'architettura
 generale del sistema, essendo un protocollo che è basato sul \texttt{HTTP} e non permettendo di aprire una connessione se non richiesta dal browser stesso ha costretto
-ad utilizzare dei server che implementano il protocollo \texttt{HTTP} e ha tolto ogni possibile architettura del \texttt{P2P} fra i vari client.
+ad utilizzare dei server che implementano il protocollo \texttt{HTTP} e ha tolto ogni possibilità a poter realizzare una architettura \texttt{p2p} fra i vari client.
 
-
-Per una visione più ad alto livello di astrazione, in figura \ref{ClientArc} è possibile osservare l'architettura del singolo client.
-Purtroppo non entreremo più in dettaglio per vedere com'è progettato il rendering del client inquanto esula dello scopo del seguente documento, 
-ma ci soffermeremo sulla parte di logica e communicazione con il server. Il file e classe responsabile per la communicazione con il server è \texttt{gameClient.js}.
-Rimandiamo alla sezione di ? Documentazione Tecnica per una più dettagliata descrizione della communicazione e scambio del messaggi che avviene fra i client e i server.
+Si rimanda alla sezione \ref{DocumentazioneTecnica} per una più dettagliata descrizione della comunicazione e scambio del messaggi che avviene fra i client e i server.
 
 \begin{figure}
 \centering
@@ -177,35 +182,40 @@ Rimandiamo alla sezione di ? Documentazione Tecnica per una più dettagliata des
 \end{figure}
 
 \subsection{Erlang}
-Il linguaggio scelto per l'implementazione del server è Erlang v.18 \cite{erlang}. Erlang è un linguaggio funzionale, con primitive
-per facilitare la comunicazione iter-processi/nodi e ampiamente utilizzato per la realizzazione di sistemi distribuiti, real soft-time,
-applicazioni non-stop e fault-tolerant.
-Tale scelta è sembrata naturale date le funzionalità primitive implementate dal linguaggio e gli scopi della nascita del linguaggio stesso.
-Le funzionalità di maggior rilievo che successivamente sono state utilizzate nell'implementazione sono la possibilità di monitorare 
-altri processi/nodi ed essere notificati quando muore, librerie per transazioni distribuite e
-un ampio set di librerie (\texttt{OTP}). In particolare il behaviour \texttt{gen\_server} è risultato
-di grande supporto per la realizazzione del server del gioco \cite{erlang-monitor, erlang-supervisor, erlang-mnesia, erlang-gen-server}.
+Il linguaggio scelto per l'implementazione del server è Erlang v.18 \cite{erlang} (o superiori).
+
+Erlang è un linguaggio funzionale, con primitive
+per facilitare la comunicazione iter-processi/nodi e ampiamente utilizzato per la realizzazione di sistemi distribuiti, real soft-time, applicazioni non-stop e fault-tolerant.
+
+Le funzionalità di maggior rilievo date dal linguaggio che sono state utilizzate nell'implementazione del presente progetto sono: la possibilità di monitorare 
+altri processi/nodi e ricevere notifiche in caso di fallimenti, le librerie per transazioni distribuite e
+un ampio set di librerie (\texttt{OTP}).
+
+In particolare il behaviour \texttt{gen\_server} è risultato
+di grande supporto per la realizzazione del server del gioco \cite{erlang-monitor, erlang-supervisor, erlang-mnesia, erlang-gen-server}.
 
 
 \subsection{Cowboy 2.0}
 Come server \texttt{HTTP} e implementazione del protocollo WebSocket  è stato deciso di utilizzare Cowboy \cite{cowboy}, una libreria interamente scritta in Erlang che fornisce un ottimo supporto per le WebSocket (tutte le versioni sia standard che non definitive), modello su cui è basato il progetto.
+
 Uno dei punti di forza di Cowboy sicuramente è la semplicità del codice. I 3 moduli principali che verranno descritti nel dettaglio nella sezione successiva sono di facile comprensione e composti ciascuno da poche righe di codice di base ben documentato, da arricchire, ovviamente, secondo le esigenze del programmatore.
 
 \subsection{Rappresentazione esterna dei dati}
-Da quanto descritto nei precedenti paragrafi è facile intuire che la comunicazione può avvenire fra processi erlang oppure tra il client (browser) e il server,
-che in entrambi i casi si possono travare su nodi diversi in giro per il mondo. Di conseguenza sorge il problema della rappresentazione esterna dei dati per
-la comunicazione e scambio dei messaggi. Per quanto riguarda la comunicazione fra processi erlang il problema non persiste in quanto
-la soluzione ci viene offerta dalle primitive del linguaggio stesso \cite{erlang-edr}.
+Da quanto descritto nei precedenti paragrafi è facile intuire che la comunicazione può avvenire fra processi erlang oppure tra il client (browser) e il server, che in entrambi i casi si possono trovare su nodi diversi in giro per il mondo. 
 
-Riguardo alla comunicazione fra il client e il server si è optato per 
-il formato \texttt{JSON} per la rapresentazione esterna dei dati. In particolare per semplificare ancor di più la sintassi e semantica del formato \texttt{JSON}, solo
-messaggi del tipo: \texttt{[Event, Data]} si possono scambiare fra client e server, dal nome \texttt{Event} e \texttt{Data} si può intuire il loro significato.
-Quando invece c'è la necessita di mandare una quantità più grande di dati un formato più complesso è stato stabilito: \texttt{[Event, [Data1, Data2, ...]]}, dove 
-\texttt{Data1} potrebbe essere a sua volta un'altra lista. A volte è necessario mandare messaggi con solo l'evento e nessun tipo di dato, in quel caso il campo \texttt{Data} può assumere valore \texttt{null}, e.g. \texttt{[''evento'', null]}.
+Di conseguenza sorge il problema della rappresentazione esterna dei dati per
+la comunicazione e scambio dei messaggi. Per quanto riguarda la comunicazione fra processi erlang il problema non persiste in quanto la soluzione ci viene offerta dalle primitive del linguaggio stesso \cite{erlang-edr}.
 
-Quando un processo erlang riceve un messaggio in formato \texttt{JSON}, deve inanzitutto decodificarlo per poterlo consumare, purtroppo non ci sono librerie e primitive di linguaggio
-per la codifica e decodifica dei messaggi in formato \texttt{JSON}. Per ovviare al problema enunciato precedentemente è stata utilizzata una libreria erlang da terze parti,
-in particolare Jiffy \cite{jiffy}.
+Riguardo alla comunicazione fra il client e il server si è optato per il formato \texttt{JSON}.
+In particolare per semplificare ancor di più la sintassi e semantica del formato \texttt{JSON}, vengono scambiati solo
+messaggi del tipo: \texttt{[Event, Data]} dove evento generalmente indica un azione da compiere accompagnata da eventuali dati.
+
+Il \texttt{Dato} può essere di tipo base o composto.
+A volte è necessario mandare messaggi con solo l'evento e nessun tipo di dato, in quel caso il campo \texttt{Data} può assumere valore \texttt{null}, e.g. \texttt{[''evento'', null]}.
+
+Quando un processo erlang riceve un messaggio in formato \texttt{JSON}, deve innanzitutto decodificarlo per poterlo consumare, purtroppo però non ci sono librerie e primitive di linguaggio predefinite per la codifica e decodifica dei messaggi in formato \texttt{JSON}.
+
+Per ovviare al problema enunciato precedentemente è stata utilizzata una libreria erlang di terze parti: Jiffy \cite{jiffy}.
 
 
 \subsection{Architettura server}
@@ -218,7 +228,8 @@ In figura \ref{ServerArc} possiamo invece osservare l'architettura che è stata 
 \label{ServerArc}
 \end{figure}
 
-Il server è interamente scritto in Erlang e la libreria principale utilizzata, oltre Cowboy è \href{https://github.com/davisp/jiffy}{Jiffi}. Il progetto è stato diviso in più moduli di cui tre in particolare per la gestione della \textit{websocket}, uno per la gestione delle repliche (o slave) e altri per la gestione della logica di gioco; i moduli vengono di seguito descritti.
+Il progetto è stato diviso in più moduli di cui tre in particolare per la gestione della \textit{websocket}, uno per la gestione delle repliche (o slave) e altri per la gestione della logica di gioco (in qualità di arbitri); i moduli vengono di seguito descritti.
+
 \subsubsection{earth\_defender\_app}
 Il modulo \texttt{earth\_defender\_app} è responsabile della configurazione e dell'avvio del processo server (nel nostro caso un server Cowboy). Il modulo risponde con la configurazione in \texttt{config.hrl} che contiene il nome dell'host, la porta e un timeout.
 Di seguito è possibile osservare la parte di codice dove viene indicato di avviare un server in ascolto sulla porta specificata in fase di creazione della websocket \texttt{>make [...] -port 8888} con protocollo \texttt{http} e inoltrare le richieste al modulo \texttt{websocket\_handler}.
@@ -256,7 +267,9 @@ init(_Args) ->
   {ok, {{one_for_one, 10, 10}, Procs}}.
 \end{lstlisting}
 \subsubsection{websocket\_handler}
-\texttt{websocket\_handler} è il modulo principale che si occupa della gestione di tutte le richieste/risposte alla/dalla websocket e da/verso le proprie repliche. Tutte le richieste che arrivano dall'esterno (nel nostro caso dalle operazioni di \texttt{send()} dei vari client) passano per questo modulo attraverso la funzione \texttt{websocket\_handle({text, Msg}, State)} e sono del tipo: \texttt{[evento,dato]} dove \texttt{evento} indica l'azione compiuta dal client (ad esempio per indicare che la nave spaziale si sta spostando) mentre \texttt{dato} contiene gli eventuali dati da trasmettere insieme all'evento (ad esempio la direzione verso la quale la nave si sta spostando), può assumere valore \texttt{null}.
+\texttt{websocket\_handler} è il modulo principale che si occupa della gestione di tutte le richieste/risposte alla/dalla websocket e da/verso le proprie repliche.
+
+Tutte le richieste che arrivano dall'esterno (nel nostro caso dalle operazioni di \texttt{send()} dei vari client) passano per questo modulo attraverso la funzione \texttt{websocket\_handle({text, Msg}, State)} e sono del tipo: \texttt{[evento,dato]} dove \texttt{evento} indica l'azione compiuta dal client (ad esempio per indicare che la nave spaziale si sta spostando) mentre \texttt{dato} contiene gli eventuali dati da trasmettere insieme all'evento (ad esempio la direzione verso la quale la nave si sta spostando), può assumere valore \texttt{null}.
 \begin{lstlisting}[basicstyle=\footnotesize][basicstyle=\footnotesize]
 websocket_handle({text, Msg}, State) ->
   [Event, Data] = jiffy:decode(Msg),
@@ -314,6 +327,7 @@ In caso di fallimento del presente modulo, viene invece invocata la funzione \te
 Il presente modulo si occupa, come suggerisce il nome, della gestione delle repliche del server master.
 
 Gli slave (o repliche) possono essere aggiunti in qualsiasi momento dopo l'avvio del master.
+
 Alla prima fase di avvio, queste, contattano il master, il quale si occupa di trasferire l'intero stato del gioco al momento della richiesta (eventuali nuovi aggiornamenti dello stato vengono trasmessi in coda a quest'ultimo messaggio per poi essere successivamente elaborati dalla replica, ottenendo pertanto uno stato consistente).
 
 Dopo la prima fase di sincronizzazione tra il master e lo slave, tutti i messaggi che vengono inoltrati dal client passano poi dal master a tutti gli slaves collegati. E' importante notare che i client contattano sempre solo ed esclusivamente il master pur disponendo degli indirizzi di tutti gli slave (questi ultimi vengono comunicati ad ogni client dal master).
@@ -401,6 +415,7 @@ Per mantenere una buona coerenza, essendo nel caso specifico problematico soprat
 \end{itemize}
 
 \section{Documentazione tecnica}
+\label{DocumentazioneTecnica}
 Nella seguente sezione si vuole illustrare in maniera più tecnica come avviene la comunicazione tra client e server, alcuni dettagli implementativi e problematiche riscontrate.
 
 La figura \ref{ServerArc} potrebbe trarre in inganno inducendo il lettore a pensare che l'architettura client/server sia di tipo \textit{richiesta/risposta} (comune per server HTTP) ma avendo utilizzato una WebSocket, è possibile sia fare richieste (client $\rightarrow$ server) senza necessariamente attendere una risposta che ricevere risposte (server $\rightarrow$ client) senza necessariamente aver fatto alcuna richiesta, scelta vincente quindi per il tipo di applicazione implementata (si provi a pensare infatti ad un gioco real time con \textit{send/receive} bloccanti).
