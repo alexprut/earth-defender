@@ -318,6 +318,12 @@ Alla prima fase di avvio, queste, contattano il master, il quale si occupa di tr
 
 Dopo la prima fase di sincronizzazione tra il master e lo slave, tutti i messaggi che vengono inoltrati dal client passano poi dal master a tutti gli slaves collegati. E' importante notare che i client contattano sempre solo ed esclusivamente il master pur disponendo degli indirizzi di tutti gli slave (questi ultimi vengono comunicati ad ogni client dal master).
 
+Nell'eventualità di un guasto nel master, uno slave è incaricato del takeover. La scelta dello slave per diventare il nuovo master è effettuata
+da un semplice algorimo di elezione. Banalmente lo slave che si è collegato per primo al master è destinato ad essere il futuro master in caso di necessità.
+Nel momento di collegamento di uno slave al master, al primo viene passata una copia dello stato, cioè viene fatto uno snapshot. L'algoritmo attualmente implementato
+per eseguire lo snapshop non garantisce completamente la consistenza, resta come futura soluzione al problema l'implementazione del famoso algorimo di 
+snapshot (Leslie Lamport) \cite{snapshot}.
+
 La scelta progettuale fatta in questa fase, potrebbe, giustamente, indurre il lettore a pensare che una soluzione sicuramente più scalabile sarebbe stata quella di suddividere il carico di lavoro del master sulle varie repliche (e quindi, vista l'architettura proposta, tanti master tra loro sincronizzati), tuttavia, trattandosi di un gioco in tempo reale (e vista comunque la non perfetta sincronizzazione di tutti i client) è stato ritenuto opportuno indirizzare tutte le richieste ad una sola "macchina" che funge da master (nel caso specifico anche da arbitro) in modo da permettere a tutti i client di vedere sempre lo stesso stato globale del sistema.
 
 
