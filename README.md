@@ -1,9 +1,9 @@
 Earth Defender
 --------------
-A single/multiplayer 3D browser game build with Erlang and Three.js  
+A distributed soft real-time 3D single/multiplayer game build with Erlang and Three.js  
 __Live preview__: [https://alexprut.github.io/earth-defender/](https://alexprut.github.io/earth-defender)
 
-![Demo - Earth Defender](https://github.com/alexprut/earth-defender/raw/master/img/demo.png)
+![Demo - Earth Defender](https://github.com/alexprut/earth-defender/raw/master/documentation/img/EarthDefenderMultiplayer.png)
 
 
 ## Table of contents
