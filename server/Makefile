@@ -11,8 +11,6 @@ dep_cowboy_commit = master
 
 include erlang.mk
 
+# Example
 slave: clean rel
-	/Users/matrix/workspace/earth-defender/server/_rel/earth_defender/erts-8.0.2/bin/erl -boot /Users/matrix/workspace/earth-defender/server/_rel/earth_defender/releases/1.0.0/earth_defender -sname 'ketchup' -setcookie 'earth_defender' -port 8889 -role slave -master_name earth_defender@PAlexs-MacBook-Air
-
-slave_two: clean rel
-	/Users/matrix/workspace/earth-defender/server/_rel/earth_defender/erts-8.0.2/bin/erl -boot /Users/matrix/workspace/earth-defender/server/_rel/earth_defender/releases/1.0.0/earth_defender -sname 'mayonnaise' -setcookie 'earth_defender' -port 8890 -role slave -master_name earth_defender@PAlexs-MacBook-Air
+	./server/_rel/earth_defender/erts-8.0.2/bin/erl −boot ./server/_rel/earth_defender/releases/1.0.0/earth_defender −sname 'ketchup' −setcookie 'earth_defender' −port 8889 −hostname ”localhost” −role slave −master_name earth_defender@host
