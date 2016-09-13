@@ -2,18 +2,38 @@ body {
 	width: 100%;
 	height: 100%;
 	margin: 0;
+	padding: 0;
+	font-family: "Courier New", Courier, monospace;
+	color: #fff;
 }
 
 canvas {
 	width: 100%;
 	height: 100%;
+	margin: 0;
+	padding: 0;
 }
 
-#stats {
-	position : fixed;
-	z-index: 1000;
-	right: 245px;
-	top: 0;
+button {
+	display : inline-block;
+	background-color: #1c1433;
+	width: 200px;
+	border: 1px solid #111133;
+	color: #fff;
+	padding: 0;
+	margin: 0;
+	font-size: 20px;
+	line-height: 98px;
+	font-family: "Courier New", Courier, monospace;
+	cursor: pointer;
+}
+
+button:hover {
+	background: #6e7be6;
+}
+
+.hidden {
+	display: none;
 }
 
 #panel {
@@ -22,13 +42,12 @@ canvas {
 	position : fixed;
 	top: 0;
 	left: 0;
-	background-color: rgb(17, 17, 51);
+	background-color: #111133;
 }
 
 #panel #logo {
 	margin-left : 20px;
-	color: #fff;
-	font-family: "Courier New", Courier, monospace;
+	margin-right: 40px;
 	font-size: 27px;
 	line-height: 48px;
 	height: 48px;
@@ -37,11 +56,9 @@ canvas {
 	font-style: italic;
 }
 
-#panel #life {
-	float: left;
-	margin-left : 40px;
-	color: #fff;
-	font-family: "Courier New", Courier, monospace;
+#panel .elements div {
+	display: inline-block;
+	margin-right : 20px;
 	font-size: 15px;
 	line-height: 48px;
 	height: 48px;
@@ -49,6 +66,129 @@ canvas {
 	font-style: italic;
 }
 
+#gameType, #message, #gameRoom {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	padding: 0;
+	text-align: center;
+	text-decoration: none;
+}
+
+#gameRoom {
+	width: 400px;
+	height: 200px;
+	margin-left: -200px;
+	margin-top: -100px;
+}
+
+#gameRoom #gameRoom-list {
+	width: 400px;
+	display: block;
+	height: 200px;
+	overflow: scroll;
+	font-size: 13px;
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	background-color: #1c1433;
+	color: #fff;
+	font-family: "Courier New", Courier, monospace;
+	border: none;
+	cursor: pointer;
+}
+
+#gameRoom #gameRoom-list li {
+	display: block;
+	height: 40px;
+	width: 360px;
+	line-height: 40px;
+	border: 1px solid #111133;
+	margin: 0;
+	text-align: left;
+	padding: 0 20px;
+}
+
+#gameRoom #gameRoom-list li:hover {
+	background: #6e7be6;
+}
+
+#gameRoom #gameRoom-list li.selected {
+	background: #6e7be6;
+}
+
+#gameType {
+	width: 400px;
+	height: 100px;
+	margin-left: -200px;
+	margin-top: -50px;
+}
+
+#message {
+	width: 400px;
+	height: 100px;
+	margin-left: -200px;
+	margin-top: -50px;
+	font-size: 27px;
+	line-height: 100px;
+}
+
+/* Instructions */
+#instructions {
+	position: absolute;
+	bottom: 20px;
+	width: 500px;
+	left: 50%;
+	padding: 0;
+	margin: 0;
+	margin-left: -250px;
+	text-align: center;
+}
+
+#instructions .move {
+	display: inline-block;
+	width: 114px;
+	text-align: center;
+}
+
+#instructions .move-y {
+	display: inline-block;
+	width: 100px;
+	text-align: center;
+}
+
+#instructions .shoot {
+	display: inline-block;
+	width: 210px;
+	text-align: center;
+}
+
+#instructions .key {
+	text-align: center;
+	width: 30px;
+	height: 30px;
+	vertical-align: middle;
+	color: white;
+	line-height: 30px;
+	display: inline-block;
+	border: 1px solid white;
+	border-radius: 5px;
+	text-transform: uppercase;
+	margin: 3px;
+}
+
+#instructions .key-w {
+	display: block;
+	margin: 0 auto;
+}
+
+#instructions .key-space {
+	display: block;
+	margin: 0 auto;
+	min-width: 200px;
+}
+
+/* Debug */
 body .dg.ac {
 	right: 0;
 	z-index: 1000;
@@ -56,4 +196,11 @@ body .dg.ac {
 
 body .dg.a {
 	margin: 0;
+}
+
+#stats {
+	position : fixed;
+	z-index: 1000;
+	left: 0;
+	bottom: 0;
 }
