@@ -157,5 +157,10 @@ add_rooms([]) ->
 
 connect_to_master(Master_name) ->
   utils:log("Request from slave to connect to master: ~n~p~n", [Master_name]),
-  net_kernel:connect_node(Master_name),
-  {local_rooms_state, Master_name} ! {'slave_connect', node(), utils:get_service_url()}.
+  case net_kernel:connect_node(Master_name) of
+    true ->
+      {local_rooms_state, Master_name} ! {'slave_connect', node(), utils:get_service_url()};
+    _ ->
+      utils:log("Can't connect to the master, kill me: ~n~p~n", [Master_name]),
+      application:stop(earth_defender_app)
+  end.
