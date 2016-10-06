@@ -6,7 +6,7 @@
 -include("room_state.hrl").
 
 %% External exports
--export([start_link/1, get_player_pid/2, create_state_snapshot/1, set_state/2]).
+-export([start_link/1, get_player_pid/2, create_state_snapshot/1, set_state/2, stop/1]).
 
 %% Internal exports
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -44,6 +44,9 @@ handle_call(Request, _From, State) ->
 % Asynchronous messages
 handle_cast(Request, State) ->
   case Request of
+    stop ->
+      utils:log("Killing: room, pid: ~p~n", [self()]),
+      {stop, normal, State};
     {set_state, New_state} ->
       utils:log("Updating room state to: ~n~p~n", [New_state]),
       Players = lists:flatmap(
@@ -139,17 +142,27 @@ handle_info(Data, State) ->
     {ship_shoot, Ship_id} ->
       broadcast(State#room_state.players, ship_shoot, Ship_id),
       {noreply, State};
+    % FIXME remove me, and check where it is used
     stop ->
-      terminate(self());
+      terminate(self()),
+      {noreply, State};
     Unknown ->
       utils:log("Warning: unknown message received in 'room:handle_info', message: ~p~n", [Unknown]),
       {noreply, State}
   end.
 
-terminate(Reason, _State) ->
+terminate(Reason, State) ->
   utils:log("Terminating 'room', reason: ~p~n", [Reason]),
+  lists:flatmap(
+    fun({_, Player_pid, _}) ->
+      Player_pid ! stop,
+      []
+    end,
+    State#room_state.players
+  ),
   ok.
 
+% FIXME remove me, and check where it is used
 terminate(PID) ->
   utils:log("Killed: room, pid: ~p~n", [PID]),
   exit(PID, kill).
@@ -162,6 +175,9 @@ code_change(_OldVsn, State, _Extra) ->
 %%% gen_server calls: utilities functions.
 %%%
 %%% ---------------------------------------------------
+
+stop(Room_pid) ->
+  gen_server:cast(Room_pid, stop).
 
 get_player_pid(Room_pid, Player_id) ->
   gen_server:call(Room_pid, {find_player_pid, Player_id}).
