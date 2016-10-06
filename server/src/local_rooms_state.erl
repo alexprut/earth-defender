@@ -5,8 +5,8 @@
 %% External exports
 -export([
   start_link/0, get_room_pid/1, get_rooms_list/0, add_room/2, broadcast_slaves/2, broadcast_slaves/1,
-  get_servers_list/0, is_master/0, set_state_slaves/1, find_room_pid/1, remove_slave/1,
-  broadcast_players/2
+  get_servers_list/0, is_master/0, find_room_pid/1, remove_slave/1,
+  broadcast_players/2, clean_state/0
 ]).
 
 %% Internal exports
@@ -29,7 +29,7 @@ init(_Args) ->
   Role = utils:get_initial_role(),
   case Role of
     master ->
-      ok;
+      monitor_mesh:start_monitor_mesh();
     slave ->
       slave_handler:connect_to_master(utils:get_master_name())
   end,
@@ -38,6 +38,18 @@ init(_Args) ->
 % Synchronous messages
 handle_call(_Request, _From, State) ->
   case _Request of
+    clean_state ->
+      utils:log("Cleaning current state.~n", []),
+      lists:flatmap(
+        fun({_, Room_pid}) ->
+          room:stop(Room_pid),
+          []
+        end,
+        State#state.rooms
+      ),
+      New_state = State#state{rooms = [], slaves = []},
+      utils:log("Finished cleaning current state.~n", []),
+      {reply, ok, New_state};
     {find_room_pid, Room_id} ->
       {reply, find_room_pid(Room_id, State#state.rooms), State};
     is_master ->
@@ -79,75 +91,65 @@ handle_cast(Request, State) ->
 % Asynchronous messages
 handle_info(Data, State) ->
   case Data of
-    {set_state_slaves, State_slaves} ->
-      New_state = State#state{slaves = State_slaves},
-      {noreply, New_state};
-    {slave_remove, Slave_pid} ->
-      New_state = State#state{slaves = remove_slave(State#state.slaves, Slave_pid)},
-      utils:log("Removed slave of pid. ~p~n", [Slave_pid]),
-      broadcast_slaves(New_state#state.slaves, {set_state_slaves, New_state#state.slaves}),
+    {slave_remove, Slave_name} ->
+      New_state = State#state{slaves = remove_slave(State#state.slaves, Slave_name)},
+      utils:log("Removed slave of name: ~p~n", [Slave_name]),
       broadcast_players(
         New_state#state.rooms,
         {broadcast_players, {servers_list, create_servers_list(New_state)}}
       ),
       {noreply, New_state};
     master_takeover ->
-      utils:log("Slave attempting to be the new master: ~n", []),
-      [Slave_master | Slaves] = State#state.slaves,
-      Pid = whereis(slave_handler),
-      case Slave_master of
-        {Name, Pid, Service_url} ->
-          utils:log("Slave becoming the new master, name: ~p~n", [Name]),
-          New_state = State#state{role = master, slaves = Slaves},
-          % Broadcast slaves the new slaves
-          broadcast_slaves(New_state#state.slaves, {set_state_slaves, Slaves}),
-          % Broadcast to slaves the new master data
-          broadcast_slaves(New_state#state.slaves, {set_state_master, {Name, Pid, Service_url}}),
-          % Monitor Slaves
-          lists:flatmap(
-            fun({_, Slave_pid, _}) ->
-              [monitors:start_monitor_slave(Slave_pid)]
-            end,
-            Slaves
-          ),
-          broadcast_players(
-            New_state#state.rooms,
-            {broadcast_players, {servers_list, create_servers_list(New_state)}}
-          ),
-          {noreply, New_state};
-        _ ->
-          {noreply, State}
-      end;
+      utils:log("Slave becoming the new master, node name: ~p~n", [node()]),
+      Slaves = lists:flatmap(
+        fun(Node) ->
+          [{
+            Node,
+            rpc:call(Node, slave_handler, get_pid, [], 2000),
+            rpc:call(Node, utils, get_service_url, [], 2000)
+          }]
+        end,
+        nodes()
+      ),
+      New_state = State#state{role = master, slaves = lists:reverse(lists:keysort(1, Slaves))},
+      % Creating local master snapshot
+      utils:log("Starting creating local master snapshot...~n", []),
+      Snapshot = lists:flatmap(fun({_, Room_pid}) -> [room:create_state_snapshot(Room_pid)] end, New_state#state.rooms),
+      utils:log("Master local state snapshot: ~n~p~n", [Snapshot]),
+      lists:flatmap(
+        fun({Slave_name, Slave_pid, _}) ->
+          % Send state snapshot to slave
+          utils:log("Master sends local state snapshot to slave name: ~p and pid: ~p~n", [Slave_name, Slave_pid]),
+          Slave_pid ! {set_state, Snapshot},
+          []
+        end,
+        New_state#state.slaves
+      ),
+      {noreply, New_state};
     {room_remove, Room_id} ->
       New_state = State#state{rooms = remove_room(State#state.rooms, Room_id)},
       {noreply, New_state};
     {slave_connect, Slave_name, Service_url} ->
       utils:log("Master connects to slave: ~p~n", [Slave_name]),
-      case rpc:call(Slave_name, slave_handler, start_link, [{node(), self(), utils:get_service_url()}], 2000) of
-        {_, Slave_pid} ->
+      case rpc:call(Slave_name, slave_handler, slave_handler_sup, [{node(), utils:get_service_url()}], 2000) of
+        Slave_pid ->
           % Add slave to state
           New_state = State#state{
-            slaves = [{Slave_name, Slave_pid, list_to_bitstring(Service_url)} | State#state.slaves]
+            slaves = lists:reverse(
+              lists:keysort(1, [{Slave_name, Slave_pid, Service_url} | State#state.slaves])
+            )
           },
           % Creating local master snapshot
           utils:log("Starting creating local master snapshot...~n", []),
-          Snapshot = {
-            lists:flatmap(fun({_, Room_pid}) -> [room:create_state_snapshot(Room_pid)] end, State#state.rooms),
-            State#state.slaves
-          },
+          Snapshot = lists:flatmap(fun({_, Room_pid}) -> [room:create_state_snapshot(Room_pid)] end, State#state.rooms),
           utils:log("Master local state snapshot: ~n~p~n", [Snapshot]),
           % Send state snapshot to slave
           utils:log("Master sends local state snapshot to slave: ~p~n", [Slave_name]),
           Slave_pid ! {set_state, Snapshot},
-          % Start monitoring the slave
-          monitors:start_monitor_slave(Slave_pid),
-          broadcast_slaves(New_state#state.slaves, {set_state_slaves, New_state#state.slaves}),
           broadcast_players(
             New_state#state.rooms,
             {broadcast_players, {servers_list, create_servers_list(New_state)}}
-          );
-        _ ->
-          New_state = State
+          )
       end,
       {noreply, New_state};
     Unknown ->
@@ -167,6 +169,9 @@ code_change(_OldVsn, State, _Extra) ->
 %%% gen_server calls: utilities functions.
 %%%
 %%% ---------------------------------------------------
+
+clean_state() ->
+  gen_server:call(whereis(local_rooms_state), clean_state).
 
 add_room(Room_id, Room_pid) ->
   gen_server:call(whereis(local_rooms_state), {room_add, {Room_id, Room_pid}}).
@@ -195,11 +200,8 @@ get_servers_list() ->
 is_master() ->
   gen_server:call(whereis(local_rooms_state), is_master).
 
-set_state_slaves(State_slaves) ->
-  whereis(local_rooms_state) ! {set_state_slaves, State_slaves}.
-
-remove_slave(Slave_pid) ->
-  whereis(local_rooms_state) ! {slave_remove, Slave_pid}.
+remove_slave(Slave_name) ->
+  whereis(local_rooms_state) ! {slave_remove, Slave_name}.
 
 %%% ---------------------------------------------------
 %%%
@@ -213,12 +215,12 @@ find_room_pid(Room_id, []) ->
   utils:log("Warning: there is no such a room of id: ~p~n", [Room_id]),
   error.
 
-remove_slave([{_, Slave_pid, _} | XS], Slave_pid) ->
+remove_slave([{Slave_name, _, _} | XS], Slave_name) ->
   XS;
-remove_slave([X | XS], Slave_pid) ->
-  lists:append([X], remove_slave(XS, Slave_pid));
-remove_slave([], Slave_pid) ->
-  utils:log("Warning: there is no such a 'slave' to be removed with pid. ~n", [Slave_pid]),
+remove_slave([X | XS], Slave_name) ->
+  lists:append([X], remove_slave(XS, Slave_name));
+remove_slave([], Slave_name) ->
+  utils:log("Warning: there is no such a 'slave' to be removed with name: ~p~n", [Slave_name]),
   error.
 
 remove_room([{Room_id, Room_pid} | XS], Room_id) ->
@@ -241,13 +243,20 @@ create_servers_list(State) ->
   end,
   case Is_master of
     true ->
-      Master_service = list_to_bitstring(utils:get_service_url());
+      Master_service = utils:get_service_url(),
+      Server_list = lists:append([
+        [Master_service],
+        lists:flatmap(
+          fun({_, _, Service_url}) ->
+            [Service_url]
+          end,
+          lists:reverse(
+            lists:keysort(1, State#state.slaves)
+          )
+        )
+      ]);
     false ->
-      {_, _, Service_url} = slave_handler:get_master_data(),
-      Master_service = Service_url
+      {_, Service_url} = slave_handler:get_master_data(),
+      Server_list = [Service_url, utils:get_service_url()]
   end,
-  Server_list = lists:append([
-    [Master_service],
-    lists:flatmap(fun({_, _, Service_url}) -> [Service_url] end, State#state.slaves)
-  ]),
   Server_list.
