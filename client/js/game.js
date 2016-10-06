@@ -72,7 +72,7 @@ Game.prototype.createUniforms = function () {
         },
         texture: {
             type: "t",
-            value: loader.load('img/earth.jpg')
+            value: TextureLoader.getInstance().load('img/earth.jpg')
         }
     };
 
