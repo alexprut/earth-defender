@@ -30,13 +30,13 @@
 \fancyfoot[R]{\thepage} % Page numbering for right footer
 \renewcommand{\headrulewidth}{0pt} % Remove header underlines
 \renewcommand{\footrulewidth}{0pt} % Remove footer underlines
-\setlength{\headheight}{13.6pt} % Customize the height of the header
+\setlength{\headheight}{13.6pt} % Customize the height of the headerl
 
 \numberwithin{equation}{section} % Number equations within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
 \numberwithin{figure}{section} % Number figures within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
 \numberwithin{table}{section} % Number tables within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
 
-\setlength\parindent{0pt} % Removes all indentation from paragraphs - comment this line for an assignment with lots of text
+\setlength\parindent{6pt} % Removes all indentation from paragraphs - comment this line for an assignment with lots of text
 
 \graphicspath{{img/}}
 
@@ -74,8 +74,8 @@ conto soprattutto di aspetti che riguardano la comunicazione
 
 \section{Analisi dei requisiti}
 Lo scopo del gioco è permettere a uno o più utenti di poter comandare una nave spaziale al fine di difendere il pianeta terra dalla minaccia degli asteroidi.
-Una partita del gioco (riferito nella relazione e codice con il nome: ``room'') può essere giocata da un giocatore singolo (singleplayer) o da più
-giocatori conteporaneamente (multiplayer), in figura \ref{EarthDefenderGameMode} è illustrata la modalità di scelta del tipo della partita.
+Una partita del gioco (riferito nella relazione e codice con il nome: ``room'') può essere giocata da un giocatore singolo (single-player) o da più
+giocatori contemporaneamente (multiplayer), in figura \ref{EarthDefenderGameMode} è illustrata la modalità di scelta del tipo della partita.
 Nel secondo caso, ogni utente deve vedere singolarmente le azioni degli altri utenti e lo stato globale del sistema deve essere uguale per tutti.
 
 Gli elementi della scena all'interno del gioco sono:
@@ -112,7 +112,7 @@ Di seguito sono brevemente elencati alcuni requisiti principali del gioco e del 
 \item Il sistema deve dare la massima trasparenza all'utente per quanto riguarda la comunicazione tra i vari moduli. L'utente deve poter avviare l'applicazione (il client) e poter iniziare a giocare la partita.
 \item Ogni giocatore può giocare una partita (entrare in una room) singleplayer oppure multiplayer
 \item In modalità multiplayer tutti gli utenti devono vedere lo stesso stato, ovvero tutti gli elementi del gioco devono essere il più possibile sincronizzati
-\item Nel caso di un guasto del server deve essere completamente trasparante per l'utente finale, il gioco devo poter proseguire senza problemi
+\item Il caso di un guasto del server deve essere completamente trasparente per l'utente finale: il gioco devo poter proseguire senza problemi
 \item Ogni utente può sparare dalla propria navicella spaziale e distruggere gli asteroidi
 \item Per ogni asteroide distrutto viene assegnato un punteggio
 \item Per ogni asteroide che colpisce la terra viene tolta la vita alla terra
@@ -143,7 +143,7 @@ diffondendo per permettere architetture di questo tipo ma ad oggi è ancora alle
 \label{GenArc}
 \end{figure}
 
-I client rappresentati in \ref{GenArc} sono browser con supporto per WebGL e WebSocket.
+I client rappresentati in figura \ref{GenArc} sono browser con supporto per WebGL e WebSocket.
 
 Durante la prima fase di collegamento, il client manda una richiesta al \texttt{DNS} per ricevere l'indirizzo del \texttt{WebServer}.
 Una volta ricevuta la risposta dal \texttt{DNS} con l'indirizzo di uno dei possibili \texttt{WebServer} il client può iniziare a ricevere tutti gli asset del gioco (js, imagini, css, ...).
@@ -213,7 +213,7 @@ messaggi del tipo: \texttt{[Event, Data]} dove evento generalmente indica un azi
 Il \texttt{Dato} può essere di tipo base o composto.
 A volte è necessario mandare messaggi con solo l'evento e nessun tipo di dato, in quel caso il campo \texttt{Data} può assumere valore \texttt{null}, es: \texttt{[''evento'', null]}.
 
-Quando un processo erlang riceve un messaggio in formato \texttt{JSON}, deve innanzitutto decodificarlo per poterlo consumare, purtroppo però non ci sono librerie e primitive di linguaggio predefinite per la codifica e decodifica dei messaggi in formato \texttt{JSON}.
+Quando un processo erlang riceve un messaggio in formato \texttt{JSON}, deve innanzitutto decodificarlo per poterlo consumare. Purtroppo non ci sono librerie e primitive di linguaggio predefinite per la codifica e decodifica dei messaggi in formato \texttt{JSON}.
 
 Per ovviare al problema enunciato precedentemente è stata utilizzata una libreria erlang di terze parti: Jiffy \cite{jiffy}.
 
@@ -332,8 +332,20 @@ Alla prima fase di avvio, queste, contattano il master, il quale si occupa di tr
 
 Dopo la prima fase di sincronizzazione tra il master e lo slave, tutti i messaggi che vengono inoltrati dal client passano poi dal master a tutti gli slaves collegati. E' importante notare che i client contattano sempre solo ed esclusivamente il master pur disponendo degli indirizzi di tutti gli slave (questi ultimi vengono comunicati ad ogni client dal master).
 
-Nell'eventualità di un guasto nel master, uno slave è incaricato del takeover. La scelta dello slave per diventare il nuovo master è effettuata
-da un semplice algorimo di elezione. Banalmente lo slave che si è collegato per primo al master è destinato ad essere il futuro master in caso di necessità.
+Nell'eventualità di un guasto al master, uno slave è incaricato di effettuare il takeover. La scelta dello slave per diventare il nuovo master è effettuata per mezzo dell'algoritmo del bullo leggermente adattato all'architettura implementata.
+
+Per implementare l'algoritmo (visibile nel modulo \texttt{monitor\_mesh.erl}) si è tenuto conto di alcune caratteristiche offerte in erlang: il fatto che i nodi che si conoscono formano una rete a mesh e l'univocità del nome di ogni nodo.
+
+Tenendo conto che ogni nodo monitora tutta la rete e supponendo che i canali di comunicazione non falliscano mai, gli scenari che si possono presentare e sono stati gestiti sono i seguenti:
+\begin{itemize}
+\item \textit{muore il master}: tutti i nodi si accorgono e conoscendosi tra di loro possono impostare come master il nodo con il nome più grande (confronto quindi tra stringhe). Si è scelto di utilizzare un confronto tra stringhe anziché tra \texttt{PID} dei processi poiché per ottenere il \texttt{PID} remoto di un processo (quello locale può essere lo stesso su macchine diverse) è necessario effettuare una rpc.
+
+Se un nodo si accorge di avere il nome più grande prende le veci di nuovo master e lo comunica a tutti gli altri nodi, ordina la lista in ordine decrescente di nomi e manda a tutti i client connessi la lista ordinata degli indirizzi di tutte le repliche oltre al proprio indirizzo.
+Quest'ultima scelta è motivata dal fatto che in caso di fallimento del master, con ogni probabilità il client si connetterà al primo tentativo al nuovo master senza rimbalzare la richiesta di connessione al master con le repliche (se infatti un client prova a connettersi ad una replica, quest'ultima lo informa che non è il master e lo invita a contattare quest'ultimo);
+\item \textit{muore uno slave}: in questo caso tutti i nodi si accorgono ed il master si occupa di informare il client affinché aggiorni la lista dei server disponibili;
+\item un nuovo \textit{slave entra nella mesh}: in questo caso, anche se il nuovo nodo ha un nome maggiore degli altri non viene avviato alcun algoritmo di elezione (finché il master funziona correttamente perché interromperlo?), il master si occupa di informare i client connessi della nuova disponibilità.
+\end{itemize}
+
 Nel momento di collegamento di uno slave al master, al primo viene passata una copia dello stato, cioè viene fatto uno snapshot. L'algoritmo attualmente implementato
 per eseguire lo snapshop non garantisce completamente la consistenza, resta come futura soluzione al problema l'implementazione del famoso algorimo di 
 snapshot (Leslie Lamport) \cite{snapshot}.
@@ -404,7 +416,7 @@ Per cercare di mantenere un alto livello di coerenza tenendo conto quindi di pos
 \begin{itemize}
 \item ogni qualvolta un client esegue un operazione di join all'interno della room, quest'ultimo chiede al server la posizione (attuale, al momento della richiesta) di tutti gli asteroidi presenti nella scena del primo client che ha creato la room (o se muore del primo che ha fatto join nella stessa room, il quale avrà già memorizzato la posizione del creatore della room), se anche quest'ultimo muore, del secondo giocatore che ha effettuato un join e via dicendo. Il player al quale viene fatta la richiesta, successivamente, manda in broadcast (anche a se stesso) la posizione attuale di tutti gli asteroidi della propria scena (si noti che in tutto lo scambio messaggi, sicuramente questo è quello più pesante in termini di dimensioni) permettendo quindi a tutti di sincronizzarsi nuovamente sulla stessa scena (ritardo dei messaggi permettendo);
 \item un altra strategia che è stata adottata riguarda la posizione delle varie navi all'interno della scena. In particolare, ogni qualvolta un utente decida di spostare la propria nave, quello che sta realmente facendo è comunicare al serve la direzione verso la quale si sta muovendo, il server si occupa successivamente di comunicare a tutti i partecipanti alla room la nuova posizione del player, quest'ultimo compreso, ciò per prevenire la perdita di eventuali messaggi e mantenere sempre coerente la posizione di tutti i player (in sostanza, il server, come più volte affermato, funge da arbitro, "decide" lui la posizione delle navi all'interno della scena);
-\item l'ultima strategia riguarda invece la collisione dei vari meteoriti con il pianeta Terra seguito dal relativo aggiornamento del punteggio. A causa del ritardo dei messaggi, non essendoci una perfetta sincronizzazione degli elementi della scena, nel caso specifico gli asteroidi, se in un client, avviene l'azione di collisione poco prima di un altro (assumendo la presenza di soli due giocatori) allora verrebbe tolto il doppio del punteggio (con $n$ giocatori $n*punteggio$), per evitare ciò, il punteggio viene aggiornato solo ed esclusivamente nel momento in cui la collisione avviene nell'ultimo giocatore che è entrato nella room (la scelta è stata casuale, anche scegliendo il primo, il risultato sarebbe stato medesimo). Questa scelta implementativa permane comunque anche in caso di perfetta sincronizzazione degli asteroidi.
+\item l'ultima strategia riguarda invece la collisione dei vari meteoriti con il pianeta Terra seguito dal relativo aggiornamento del punteggio. A causa del ritardo dei messaggi, non essendoci una perfetta sincronizzazione degli elementi della scena, nel caso specifico gli asteroidi, se in un client, avviene l'azione di collisione poco prima di un altro (assumendo la presenza di soli due giocatori) allora verrebbe tolto il doppio del punteggio (con $n$ giocatori $n*punteggio$), per evitare ciò, il punteggio viene aggiornato solo ed esclusivamente nel momento in cui la collisione avviene nell'ultimo giocatore che è entrato nella room (la scelta è stata casuale, anche scegliendo il primo, il risultato sarebbe stato medesimo, si ricorda inoltre che è il server a tenere conto del punteggio). Questa scelta implementativa permane comunque anche in caso di perfetta sincronizzazione degli asteroidi.
 \end{itemize}
 
 Per mantenere una buona coerenza, essendo nel caso specifico problematico soprattutto la sincronizzazione dei vari client, avrebbe sicuramente aiutato l'utilizzo di un orologio globale.
