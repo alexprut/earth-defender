@@ -13,4 +13,4 @@ include erlang.mk
 
 # Example
 slave: clean rel
-	./server/_rel/earth_defender/erts-8.0.2/bin/erl −boot ./server/_rel/earth_defender/releases/1.0.0/earth_defender −sname 'ketchup' −setcookie 'earth_defender' −port 8889 −hostname ”localhost” −role slave −master_name earth_defender@host
+	./_rel/earth_defender/erts-8.0.2/bin/erl -boot ./_rel/earth_defender/releases/1.0.0/earth_defender -sname 'ketchup' -setcookie 'earth_defender' -port 8889 -hostname "localhost" -role slave -master_name earth_defender@host
