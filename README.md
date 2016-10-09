@@ -1,6 +1,6 @@
 Earth Defender
 --------------
-A distributed soft real-time 3D single/multiplayer game build with Erlang and Three.js  
+A distributed soft real-time 3D single/multiplayer game build with Erlang/OTP and Three.js  
 __Live preview__: [https://alexprut.github.io/earth-defender/](https://alexprut.github.io/earth-defender)
 
 ![Demo - Earth Defender](https://github.com/alexprut/earth-defender/raw/master/documentation/img/EarthDefenderMultiplayer.png)
@@ -86,21 +86,24 @@ Below you can see the instructions for building and starting the game _client_ a
     make run
     ```
 
+5. You can also run a slave/replica for fault-tolerant purposes (inside the ```./server/Makefile``` you can find a default configuration that you may change):
+
+    ```
+    make slave
+    ```
+
 ## Architecture
-To allow multiplayer mode play the WebSocket technology is used, a protocol over HTTP for asynchronous communication that can occur concurrently.
+To allow multiplayer mode play the WebSocket protocol is used, that runs over HTTP for asynchronous communication that can occur concurrently.
 Since browser can't receive a WebSocket connection, but only initialize one, client to client (P2P) connections is not possibile
 due to the limitation of the protocol (to solve that problem WebRTC can be used).
 
 ### General Architecture
-![General Architecture](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/img/GeneralArchitecture.png)
+![General Architecture](https://github.com/alexprut/earth-defender/raw/master/documentation/img/GeneralArchitecture.png)
 
-Above in the image is illustrated the general architecture of multiplayer game. The client entities (or players) are just
-browsers with support to WebSockets and WebGL. At first the clients (browser) make a request to the DNS in order to get the address of the WebServer, the DNS is also responsible for the Load Balancing. Once the DNS responses with the address to one of the WebServers the client
-fetches all the assets (js, images, css, ...). The WebServer is only responsible for providing the game assets, not less nor more.
-As last step the client contact one of the servers to join a game room or create one and then play. The servers are written in Erlang language
-and intended to be fault tolerant and distributed.
+Above in the image is illustrated the general architecture of multiplayer game. The client entities (or players) are just browsers with support to WebSockets and WebGL. At first the clients (browser) make a request to the DNS in order to get the address of the WebServer, the DNS is also responsible for the Load Balancing. Once the DNS responses with the address to one of the WebServers the client fetches all the assets (js, images, css, ...). The WebServer is only responsible for providing the game assets, not less nor more.
+As last step the client contact one of the servers to join a game room or create one and then play. The servers are written in Erlang language and intended to be fault tolerant and distributed.
 
-![CAP Theorem](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/img/CAP.png)
+![CAP Theorem](https://github.com/alexprut/earth-defender/raw/master/documentation/img/CAP.png)
 
 In a perfect world it would be nice to have both Availability and Consistency at the same time.
 In a real world it's impossible and that is what the CAP Theorem say, you can only have 2 things at once (i.e. CP, AP, AC),
@@ -110,26 +113,25 @@ important to have an available system than consistent (at least for this game). 
 consistency (sync/solve somehow later) and gain availability.
 
 ### Use Cases
-Below are listed the most relevant use cases, user interfaces and the
-flow diagrams of the messages exchanged between the client and server.
+Below are listed the most relevant use cases, user interfaces and the flow diagrams of the messages exchanged between the client and server.
 
 #### Multiplayer, create new room
 Below you can see the user interface:
 
-![UI, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/img/MultiplayerCreateRoomUC.png)
+![UI, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/master/documentation/img/MultiplayerCreateRoomUC.png)
 
 Below you can see the message exchanged between the client and the server:
 
-![Flow Diagram, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/img/MultiplayerCreateRoom.png)
+![Flow Diagram, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/master/documentation/img/MultiplayerCreateRoom.png)
 
 #### Multiplayer, join a room
 Below you can see the user interface:
 
-![UI, Multiplayer, join new room](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/img/MultiplayerJoinRoomUC.png)
+![UI, Multiplayer, join new room](https://github.com/alexprut/earth-defender/raw/master/documentation/img/MultiplayerJoinRoomUC.png)
 
 Below you can see the message exchanged between the client and the server:
 
-![Flow Diagram, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/img/MultiplayerJoinRoom.png)
+![Flow Diagram, Multiplayer, create new room](https://github.com/alexprut/earth-defender/raw/master/documentation/img/MultiplayerJoinRoom.png)
 
 ### Client
 The client is written using raw CSS, HTML & JavaScript.
@@ -138,7 +140,7 @@ The only library used for the 3D rendering is Three.js.
 
 Below you can see the client architecture:
 
-![Client Architecture](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/img/ClientArchitecture.png)
+![Client Architecture](https://github.com/alexprut/earth-defender/raw/master/documentation/img/ClientArchitecture.png)
 
 The ```Game``` class is the core of the game, it contains the game renderer and logic, it uses various instances of the ```GameElements``` class which contains game basic objects.
 Accordingly the classes ```GameMultiplayer``` and ```GameSingleplayer``` extends the basic game logic and add the features for the multiplayer and singleplayer game mode.
@@ -153,22 +155,23 @@ The server is written in Erlang language, the libraries used are:
 
 Below you can see the client architecture:
 
-![Server Architecture](https://github.com/alexprut/earth-defender/raw/real-time-multiplayer/documentation/img/ServerArchitecture.png)
+![Server Architecture](https://github.com/alexprut/earth-defender/raw/master/documentation/img/ServerArchitecture.png)
 
 The server is intended to be fault-tolerant oriented. As mentioned before the Cowboy
 module is used to handle the WebSocket connection and the initial HTTP handshake of the
-last mentioned protocol. The file ```websocket_app.erl``` is responsible for spawning
-the one new server process (i.e. Cowboy) which will be the same for any request, ```websocket_sup.erl```
+last mentioned protocol. The file ```earth_defender_app.erl``` is responsible for spawning
+the one new server process (i.e. Cowboy) which will be the same for any request, ```earth_defender_sup.erl```
 is the supervisor (i.e. if Cowboy crashes it restarts the process).
-The core file that handles the WebSocket requests is ```ws_handler.erl```, a fresh new instance
-is made at every new client connection. The ```config.erl``` file contains all the configuration,
+The core file that handles the WebSocket requests is ```websocket_handler.erl```, a fresh new instance
+is made at every new client connection. The ```config.hrl``` file contains all the configuration,
 and there is the place where the server is configured with various options.
-Noteworthy is that the ```global_room_state.erl``` is spawned and initialized at the bootstraping
-of the Cowboy application, the last mentioned file is a global state, that is where all the
+Noteworthy is that the ```local_room_state.erl``` is spawned and initialized at the bootstraping
+of the Cowboy application, the last mentioned file is a local state, that is where all the
 information about room, players and other stuff is kept and shared among all the clients.
 Finally the ```room.erl``` file spawns a new process every time a new room is created, and it is destroyed
 when no more players are inside the room, obviously the ```player.erl``` file spawns a new process
-for every client, and contains the information of the player.
+for every client, and contains the information of the player. Finally the ```slave_handler.erl``` file is responsible for creating a
+ consistent replica of the master and in case of a master crash taking over and becoming the new master server.
 
 
 License
