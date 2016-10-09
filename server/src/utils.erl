@@ -61,5 +61,5 @@ get_service_url() ->
     {_, Hostname} ->
       ok
   end,
-  Hostname ++ ":" ++ integer_to_list(get_port()) ++ "/websocket".
+  list_to_bitstring(Hostname ++ ":" ++ integer_to_list(get_port()) ++ "/websocket").
 

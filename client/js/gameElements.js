@@ -2,6 +2,58 @@
 // three.js Game Elements
 /////////////////////////////////////////////////////
 
+// https://github.com/mrdoob/three.js/issues/9824
+var TextureLoader = (function () {
+    var _instance = null;
+
+    var Loader = function () {
+        var _loader = new THREE.TextureLoader();
+        var _cache = [];
+
+        function _cachePush(elem, val) {
+            _cache.push({
+                element: elem,
+                value: val
+            });
+        }
+
+        function _cacheSearch(elem) {
+            for (var i = 0; i < _cache.length; i++) {
+                if (_cache[i].element === elem) {
+                    return _cache[i].value;
+                }
+            }
+
+            return false;
+        }
+
+        function load(texture) {
+            var match = _cacheSearch(texture);
+
+            if (match) {
+                return match;
+            }
+
+            var val = _loader.load(texture);
+            _cachePush(texture, val);
+
+            return val;
+        }
+
+        return {
+            load: load
+        }
+    };
+
+    function getInstance() {
+        return (_instance) ? _instance : _instance = Loader();
+    }
+
+    return {
+        getInstance: getInstance
+    }
+})();
+
 var Light = function (lightPosition, lightPower, ambientValue, rho) {
     this.lightPosition = lightPosition;
     this.lightPower = lightPower;
@@ -13,10 +65,10 @@ Light.prototype.constructor = Light;
 
 var Element = function (texture) {
     this.texture = texture;
+    this.loader = TextureLoader.getInstance();
 };
 Element.prototype.createShaderMaterial = function (uniforms, vertexShader, fragmentShader) {
-    var loader = new THREE.TextureLoader();
-    uniforms.texture.value = loader.load(this.texture);
+    uniforms.texture.value = this.loader.load(this.texture);
 
     return new THREE.ShaderMaterial({
         uniforms: uniforms,
@@ -58,11 +110,10 @@ var Sun = function () {
 Sun.prototype = Object.create(Element.prototype);
 Sun.prototype.constructor = Sun;
 Sun.prototype.create = function () {
-    var loader = new THREE.TextureLoader();
     return new THREE.Mesh(
         new THREE.SphereGeometry(20, 15, 15),
         new THREE.MeshBasicMaterial({
-            map: loader.load(this.texture),
+            map: this.loader.load(this.texture),
             wireframe: true
         })
     );
