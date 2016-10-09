@@ -109,18 +109,20 @@ var GameDOMHandler = function (gameHandler) {
                 });
 
                 document.getElementById('gameRoom-create').addEventListener('click', function () {
-                    hideComponentGameRoom();
-                    gameHandler.server.send('room_add',index);
-                    gameHandler.stop("Loading ...");
-                    gameHandler.start();
+                    if (gameHandler.server.isConnected()) {
+                        hideComponentGameRoom();
+                        gameHandler.server.send('room_add',index);
+                        gameHandler.stop("Loading ...");
+                        gameHandler.start();
 
-                    var position = gameHandler.getSpaceShipPosition(index);
-                    gameHandler.server.send("game_ship_position", [
-                        index,
-                        position.x,
-                        position.y,
-                        position.z
-                    ]);
+                        var position = gameHandler.getSpaceShipPosition(index);
+                        gameHandler.server.send("game_ship_position", [
+                            index,
+                            position.x,
+                            position.y,
+                            position.z
+                        ]);
+                    }
                 });
 
                 document.getElementById('gameRoom-list').addEventListener('click', function (e) {
