@@ -3,7 +3,7 @@ Earth Defender
 A distributed soft real-time 3D single/multiplayer game build with Erlang/OTP and Three.js  
 __Live preview__: [https://alexprut.github.io/earth-defender/](https://alexprut.github.io/earth-defender)
 
-![Demo - Earth Defender](https://github.com/alexprut/earth-defender/raw/master/documentation/img/EarthDefenderMultiplayer.png)
+![Demo - Earth Defender](https://github.com/alexprut/earth-defender/raw/master/documentation/img/EarthDefenderMultiplayer.gif)
 
 
 ## Table of contents
@@ -177,6 +177,3 @@ for every client, and contains the information of the player. Finally the ```sla
 License
 -------
 Licensed under the MIT License – see the LICENSE file for details.
-
-Project created by __Alexandru Pruteanu__ and __Boubakr Injarn__, during the Master's Degree in Computer Science
-at the University of Udine, for the _Interactive 3D Graphics_ and the _Distributed Systems_ classes.
